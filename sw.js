@@ -1,5 +1,5 @@
 // Guarda a "casca" do painel para abrir instantaneamente e sem internet. Os DADOS nunca passam por aqui.
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const CASCA = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

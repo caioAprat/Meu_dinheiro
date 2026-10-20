@@ -174,7 +174,7 @@ const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* m
 const ler = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 
 function configDoLink() {
-  const h = new URLSearchParams(location.hash.slice(1));
+  const h = new URLSearchParams(location.hash.slice(1).replace(/&amp;/g, '&'));   // link copiado do Telegram pode vir com &amp;
   return h.get('k') && h.get('u') ? { k: h.get('k'), u: h.get('u') } : null;
 }
 let CFG = configDoLink();
