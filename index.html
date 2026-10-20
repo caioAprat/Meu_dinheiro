@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Meu dinheiro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meu dinheiro">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #0b0f17; --card: #141a26; --card2: #1b2333; --linha: rgba(255,255,255,.07);
+    --tx: #eef2f8; --mu: #8c97ab; --di: #5f697c;
+    --ok: #34d399; --ok2: rgba(52,211,153,.14); --er: #fb7185; --er2: rgba(251,113,133,.14);
+    --av: #fbbf24; --av2: rgba(251,191,36,.13); --pri: #7c9cff; --pri2: rgba(124,156,255,.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { overflow-x: hidden; background: var(--bg); }
+  body {
+    color: var(--tx);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; max-width: 560px; margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 4px 2px 16px; }
+  h1 { font-size: 23px; font-weight: 750; letter-spacing: -.4px; }
+  .hojeTxt { color: var(--mu); font-size: 13px; }
+  .frescor { font-size: 11.5px; color: var(--di); margin-top: 2px; }
+  .frescor.velho { color: var(--av); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; color: var(--pri); background: var(--pri2); border-radius: 999px; padding: 8px 14px;
+         font-size: 13px; font-weight: 650; white-space: nowrap; }
+  .btn:active { opacity: .7; }
+  .giro { display: inline-block; animation: gira 1s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .toast { background: var(--ok2); color: var(--ok); border-radius: 14px; padding: 11px 14px; font-size: 13.5px; margin-bottom: 14px; }
+  .toast.ruim { background: var(--av2); color: var(--av); }
+  .toast.erro { background: var(--er2); color: var(--er); }
+  .card { background: var(--card); border: 1px solid var(--linha); border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+  .titulo { color: var(--mu); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; }
+  .titulo small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--di); }
+
+  .hero { padding: 22px 20px 18px; }
+  .hero.ok { background: linear-gradient(160deg, rgba(52,211,153,.17), var(--card) 62%); }
+  .hero.er { background: linear-gradient(160deg, rgba(251,113,133,.19), var(--card) 62%); }
+  .hero .rotulo { font-size: 14px; color: var(--mu); }
+  .hero .valor { font-size: 42px; font-weight: 780; letter-spacing: -1.2px; margin: 2px 0 2px; font-variant-numeric: tabular-nums; }
+  .hero.ok .valor { color: var(--ok); } .hero.er .valor { color: var(--er); }
+  .hero .sub { color: var(--mu); font-size: 13px; }
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+  .mini { background: rgba(255,255,255,.045); border-radius: 14px; padding: 10px 11px; min-width: 0; }
+  .mini b { display: block; font-size: clamp(13px, 4.1vw, 16px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mini span { color: var(--mu); font-size: 11.5px; line-height: 1.3; display: block; }
+  .mini em { font-style: normal; font-size: 11px; white-space: nowrap; }
+  @media (max-width: 340px) {
+    .card { padding: 14px; border-radius: 16px; }
+    .trio { gap: 6px; } .mini { padding: 8px; }
+    .hero .valor { font-size: 34px; }
+    .ev { grid-template-columns: 40px 1fr auto !important; gap: 8px !important; }
+  }
+
+  .acao { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--linha); }
+  .acao:first-of-type { border-top: 0; padding-top: 0; }
+  .acao .ic { font-size: 22px; line-height: 1.2; }
+  .acao b { display: block; font-size: 15.5px; }
+  .acao p { color: var(--mu); font-size: 13.5px; margin-top: 2px; }
+  .card.urgente { border-color: rgba(251,113,133,.35); background: linear-gradient(160deg, rgba(251,113,133,.10), var(--card) 70%); }
+  .card.atencao { border-color: rgba(251,191,36,.30); background: linear-gradient(160deg, rgba(251,191,36,.08), var(--card) 70%); }
+  .card.ok2 { border-color: rgba(52,211,153,.25); }
+
+  .plano { font-size: 14px; line-height: 1.6; }
+  .plano b { color: var(--tx); } .plano i { color: var(--mu); font-size: 12.5px; }
+
+  .grafSaldo { position: relative; margin-top: 4px; }
+  .grafSaldo svg { display: block; width: 100%; height: 150px; touch-action: pan-y; }
+  .dica { display: flex; justify-content: space-between; gap: 8px; color: var(--mu); font-size: 12px; margin-top: 6px; min-height: 18px; }
+  .dica b { color: var(--tx); font-variant-numeric: tabular-nums; }
+  .legenda { display: flex; gap: 14px; font-size: 11.5px; color: var(--di); margin-top: 4px; }
+  .legenda i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--pri); vertical-align: middle; margin-right: 5px; }
+  .legenda i.trac { border-top-style: dashed; border-color: var(--av); }
+
+  .ev { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--linha); }
+  .ev:first-child { border-top: 0; }
+  .data { text-align: center; background: var(--card2); border-radius: 11px; padding: 4px 0; }
+  .data b { display: block; font-size: 16px; line-height: 1.15; } .data span { font-size: 10px; color: var(--mu); text-transform: uppercase; }
+  .data.hojeD { background: var(--pri2); } .data.hojeD span { color: var(--pri); }
+  .nome { font-size: 14px; overflow-wrap: anywhere; } .saldo { font-size: 11.5px; color: var(--di); font-variant-numeric: tabular-nums; }
+  .saldo.neg { color: var(--er); }
+  .dir { text-align: right; }
+  .v { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .v.ent { color: var(--ok); }
+  .paguei { margin-top: 4px; font-size: 11.5px; font-weight: 650; color: var(--pri); background: var(--pri2); border-radius: 999px; padding: 4px 11px; }
+  .paguei.conf { color: #0b0f17; background: var(--ok); }
+  .mais { width: 100%; margin-top: 8px; padding: 11px; border-radius: 12px; background: var(--card2); color: var(--mu); font-size: 13px; font-weight: 600; }
+
+  .fat { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--linha); }
+  .fat:first-of-type { border-top: 0; }
+  .fat small { display: block; color: var(--di); font-size: 12px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 650; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; }
+  .tag.er { background: var(--er2); color: var(--er); } .tag.pri { background: var(--pri2); color: var(--pri); } .tag.mu { background: var(--card2); color: var(--mu); }
+
+  .barra { height: 10px; background: var(--card2); border-radius: 999px; overflow: hidden; margin: 10px 0 8px; }
+  .barra i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pri), #a78bfa); }
+  .linha { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .pequeno { color: var(--mu); font-size: 12.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 12px; padding: 7px 11px; border-radius: 999px; background: var(--card2); color: var(--mu); }
+  .chip.pago { background: var(--ok2); color: var(--ok); } .chip.venc { background: var(--er2); color: var(--er); }
+  .chip.conf { background: var(--ok); color: #0b0f17; }
+  .aviso { background: var(--av2); color: var(--av); border-radius: 14px; padding: 10px 12px; font-size: 13px; margin-top: 10px; }
+
+  .grafico { display: flex; align-items: flex-end; gap: 4px; height: 90px; margin-top: 14px; }
+  .grafico button { flex: 1; height: 100%; display: flex; align-items: flex-end; padding: 0; }
+  .grafico button i { display: block; width: 100%; background: var(--pri2); border-radius: 5px 5px 2px 2px; min-height: 3px; }
+  .grafico button.hoje i { background: rgba(124,156,255,.45); }
+  .grafico button.sel i { background: var(--pri); }
+  .eixo { display: flex; justify-content: space-between; color: var(--di); font-size: 10.5px; margin-top: 5px; }
+  .cat { margin: 10px 0; }
+  .cat .barra { height: 7px; margin: 5px 0 0; }
+  .cat .barra i { background: var(--pri); }
+  .sub2 { color: var(--mu); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .5px; margin: 16px 0 4px; }
+
+  .diaG { color: var(--mu); font-size: 12px; font-weight: 650; margin: 12px 0 2px; }
+  .diaG:first-child { margin-top: 0; }
+  .compra { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; font-size: 14px; }
+  .compra small { display: block; color: var(--di); font-size: 11.5px; }
+  .vazio { color: var(--di); font-size: 13px; }
+  .escondido { display: none; }
+
+  .sim { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .sim label { font-size: 11.5px; color: var(--mu); display: block; margin-bottom: 4px; }
+  .sim input, .sim select { width: 100%; background: var(--card2); border: 1px solid var(--linha); border-radius: 12px; padding: 11px 12px; font-size: 16px; color: var(--tx); min-height: 44px; }
+  .btnGrande { width: 100%; padding: 12px; border-radius: 12px; background: var(--pri); color: #0b0f17; font-weight: 700; font-size: 15px; }
+  .btnGrande[disabled] { opacity: .6; }
+  .res { margin-top: 14px; font-size: 14px; }
+  .res .bloco { padding: 10px 0; border-top: 1px solid var(--linha); }
+  .res .bloco:first-child { border-top: 0; }
+  .res .ok { color: var(--ok); } .res .ruim { color: var(--er); }
+  .res ul { list-style: none; margin-top: 4px; } .res li { color: var(--mu); font-size: 13px; padding: 2px 0; }
+  .meta { background: var(--pri2); border-radius: 14px; padding: 12px 14px; margin-top: 12px; font-size: 14px; }
+
+  .skel { height: 120px; border-radius: 20px; margin-bottom: 14px; background: linear-gradient(90deg, var(--card) 0%, var(--card2) 50%, var(--card) 100%); background-size: 200% 100%; animation: brilho 1.4s ease-in-out infinite; }
+  @keyframes brilho { to { background-position: -200% 0; } }
+  .instalar { border-color: rgba(124,156,255,.35); }
+  .instalar button { color: var(--pri); font-size: 13px; margin-top: 8px; }
+  footer { text-align: center; color: var(--di); font-size: 11.5px; margin-top: 18px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Meu dinheiro</h1>
+    <div class="hojeTxt" id="hojeTxt"></div>
+    <div class="frescor" id="frescor"></div>
+  </div>
+  <button class="btn" id="atualizar" aria-label="Atualizar dados do banco"><span id="giro">↻</span> Atualizar</button>
+</header>
+<div id="app"><div class="skel"></div><div class="skel" style="height:80px"></div><div class="skel" style="height:160px"></div></div>
+<footer>Nubank e BB via Open Finance · o banco atualiza 1x por dia<br>Dinheiro vivo: mande "gastei 30" no Telegram</footer>
+
+<script>
+'use strict';
+// ------------------------------------------------------------------ configuração (link com #k=...&u=...)
+const LS = { cfg: 'dinheiro.cfg', dados: 'dinheiro.dados', dica: 'dinheiro.dica' };
+const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* modo privado */ } };
+const ler = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+
+function configDoLink() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  return h.get('k') && h.get('u') ? { k: h.get('k'), u: h.get('u') } : null;
+}
+let CFG = configDoLink();
+if (CFG) guardar(LS.cfg, JSON.stringify(CFG));        // o #k=... fica no endereço de propósito: é ele que o ícone da tela inicial reabre
+else { try { CFG = JSON.parse(ler(LS.cfg)); } catch (e) { CFG = null; } }
+
+// ------------------------------------------------------------------ utilidades
+const R = n => (n < -0.5 ? '−' : '') + 'R$ ' + Math.abs(Math.round(n || 0)).toLocaleString('pt-BR');
+const R2 = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const dt = d => new Date(d + 'T12:00:00');
+const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hhmm = iso => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+let HOJE = new Date().toISOString().slice(0, 10);
+const diasAte = d => Math.round((dt(d) - dt(HOJE)) / 864e5);
+const quando = d => { const n = diasAte(d); return n === 0 ? 'hoje' : n === 1 ? 'amanhã' : n === -1 ? 'ontem' : n > 1 && n < 7 ? SEM[dt(d).getDay()] + ', ' + dm(d) : dm(d); };
+const $ = id => document.getElementById(id);
+
+// ------------------------------------------------------------------ estado e rede
+const S = { D: null, quando: null, offline: false, carregando: false, aviso: '', avisoRuim: false, erro: '', expandir: {}, sim: { valor: '', ate: '', res: null, calculando: false } };
+
+async function api(acao, params = {}) {
+  const q = new URLSearchParams(Object.assign({ k: CFG.k, acao }, params));
+  const r = await fetch(CFG.u + '?' + q.toString(), { redirect: 'follow', cache: 'no-store' });
+  const txt = await r.text();
+  try { return JSON.parse(txt); } catch (e) { throw new Error('resposta inesperada'); }
+}
+async function enviar(tipo, extra) {
+  const r = await fetch(CFG.u + '?k=' + encodeURIComponent(CFG.k), {
+    method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ tipo }, extra || {})) });
+  const txt = await r.text();
+  try { return JSON.parse(txt); } catch (e) { throw new Error('resposta inesperada'); }
+}
+
+async function carregar(opcoes = {}) {
+  if (S.carregando) return;
+  S.carregando = true; cabecalho();
+  try {
+    if (opcoes.sync) {
+      const r = await enviar('sync');
+      S.aviso = r.aviso || ''; S.avisoRuim = r.ok === false;
+    }
+    const D = await api('dados');
+    if (D.ok === false) { const e = new Error(D.erro || 'erro'); e.auth = true; throw e; }
+    S.D = D; S.quando = Date.now(); S.offline = false; S.erro = '';
+    HOJE = D.hoje || HOJE;
+    guardar(LS.dados, JSON.stringify({ t: S.quando, D }));
+    if (D.precisaAtualizar && !opcoes.sync && !opcoes.segunda) {
+      S.carregando = false; render();
+      return carregar({ sync: true, segunda: true });         // segundo plano: o banco ficou mais de 6h sem ser lido
+    }
+  } catch (e) {
+    if (e.auth) S.erro = 'auth'; else { S.offline = true; if (opcoes.sync) { S.aviso = 'Não consegui falar com o assistente'; S.avisoRuim = true; } }
+  }
+  S.carregando = false; render();
+}
+
+// ------------------------------------------------------------------ cabeçalho
+function cabecalho() {
+  const d = new Date();
+  const longo = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('hojeTxt').textContent = longo.charAt(0).toUpperCase() + longo.slice(1);
+  $('giro').className = S.carregando ? 'giro' : '';
+  const f = $('frescor');
+  if (!S.D) { f.textContent = S.carregando ? 'carregando…' : ''; return; }
+  const ref = S.D.bancoAtualizado || S.D.atualizado;
+  const horas = (Date.now() - new Date(ref).getTime()) / 36e5;
+  f.textContent = (S.D.fonte === 'banco' ? 'Dados do banco de ' : 'Saldo informado em ') + hhmm(ref) + (S.carregando ? ' · atualizando…' : '');
+  f.classList.toggle('velho', horas > 30);
+}
+
+// ------------------------------------------------------------------ telas
+function telaSemConfig() {
+  return `<div class="card"><div class="titulo">Falta o link</div>
+    <p>Abra este painel pelo <b>link que o assistente manda no Telegram</b> (mande <b>painel</b> para ele).</p>
+    <p class="pequeno" style="margin-top:8px">Depois, no Safari: Compartilhar → Adicionar à Tela de Início.</p></div>`;
+}
+function telaAuth() {
+  return `<div class="card urgente"><div class="titulo">Acesso recusado</div>
+    <p>A chave deste painel não vale mais.</p>
+    <p class="pequeno" style="margin-top:8px">Mande <b>painel</b> no Telegram para receber um link novo e abra de novo.</p></div>`;
+}
+
+function render() {
+  cabecalho();
+  const app = $('app');
+  if (!CFG) { app.innerHTML = telaSemConfig(); return; }
+  if (S.erro === 'auth') { app.innerHTML = telaAuth(); return; }
+  if (!S.D) { app.innerHTML = S.offline
+      ? `<div class="card"><div class="titulo">Sem conexão</div><p>Não consegui falar com o assistente e ainda não há dados guardados neste aparelho.</p><button class="btnGrande" style="margin-top:12px" data-acao="tentar">Tentar de novo</button></div>`
+      : '<div class="skel"></div><div class="skel" style="height:80px"></div><div class="skel" style="height:160px"></div>'; return; }
+  const D = S.D, h = [];
+
+  if (S.offline) h.push(`<div class="toast ruim">Sem conexão: mostrando os dados de ${hhmm(S.quando)}. <button data-acao="tentar" style="text-decoration:underline">Tentar de novo</button></div>`);
+  if (S.aviso) h.push(`<div class="toast ${S.avisoRuim ? 'ruim' : ''}">${esc(S.aviso)}</div>`);
+  const problemas = (D.itens || []).filter(i => i.erro || (i.status && !/^(UPDATED|UPDATING)$/.test(i.status)));
+  if (problemas.length) h.push(`<div class="toast erro">Problema na conexão com o banco (${esc(problemas.map(i => i.conector || i.status).join(', '))}). Reconecte em meu.pluggy.ai.</div>`);
+
+  // 1. a pergunta que importa
+  const totalFaturas = D.faturas.reduce((s, f) => s + f.valor, 0);
+  const ok = D.livre >= 0;
+  h.push(`<div class="card hero ${ok ? 'ok' : 'er'}">
+    <div class="rotulo">${ok ? 'Livre para gastar até ' : 'Falta para pagar tudo até '}${dm(D.diaMenor)}</div>
+    <div class="valor">${R(Math.abs(D.livre))}</div>
+    <div class="sub">${ok ? 'Já descontando todas as contas até lá' : 'Até lá, só o essencial'}${D.proximoSalario ? ` · salário ${diasAte(D.proximoSalario.dia) <= 0 ? 'hoje' : 'em ' + diasAte(D.proximoSalario.dia) + ' dia(s)'}` : ''}</div>
+    <div class="trio">
+      <div class="mini"><b>${R(D.conta)}</b><span>na conta${D.caixinhas ? ' + caixinhas' : ''}</span></div>
+      <div class="mini"><b>${R(totalFaturas)}</b><span>em faturas</span></div>
+      <div class="mini"><b>${R(D.cheque)}</b><span>cheque especial</span></div>
+    </div></div>`);
+
+  // 2. no seu ritmo
+  const P = D.previsao, a = P && P.ateSalario;
+  if (a) h.push(`<div class="card"><div class="titulo">No seu ritmo<small>previsão, não meta</small></div>
+    <p>Gastando como nos últimos 30 dias (<b>${R(P.ritmo30)}/dia</b>), até ${dm(a.dia)} saem mais ≈ <b>${R(a.gastoProvavel)}</b> e o saldo fica em
+    <b style="color:${a.saldoComRitmo < 0 ? 'var(--er)' : 'var(--ok)'}">${R(a.saldoComRitmo)}</b>
+    <span class="pequeno">(sem gastar nada: ${R(a.saldoSemRitmo)})</span>.</p>
+    <p class="pequeno" style="margin-top:6px">Últimos 7 dias: ${R(P.ritmo7)}/dia · só o dia a dia (fora contas, empréstimos, apostas e transferências).</p></div>`);
+
+  // 3. o que fazer agora
+  const iconeN = { urgente: '🚨', atencao: '⚠️', ok: '✅' };
+  const pior = (D.acoes || []).some(x => x.nivel === 'urgente') ? 'urgente' : (D.acoes || []).some(x => x.nivel === 'atencao') ? 'atencao' : 'ok2';
+  h.push(`<div class="card ${pior}"><div class="titulo">O que fazer agora</div>${(D.acoes || []).map(x =>
+    `<div class="acao"><div class="ic">${iconeN[x.nivel]}</div><div><b>${esc(x.titulo)}</b><p>${esc(x.texto)}</p></div></div>`).join('')}</div>`);
+
+  // 4. plano do salário
+  if (D.plano) {
+    const linhas = D.plano.split('\n');
+    const cab = (linhas.shift() || '').replace(/<[^>]+>/g, '').replace(/^[^(]*/, '');
+    const corpo = linhas.map(l => l.replace(/^(\s+)/, m => '&nbsp;'.repeat(m.length))).join('<br>').replace(/^(<br>)+/, '');
+    h.push(`<div class="card"><div class="titulo">Plano do salário<small>${esc(cab)}</small></div><div class="plano">${corpo}</div></div>`);
+  }
+
+  // 5. gráfico
+  h.push(`<div class="card"><div class="titulo">Seu saldo nas próximas 5 semanas<small id="menor"></small></div>
+    <div class="grafSaldo"><svg id="svgSaldo" viewBox="0 0 340 150" preserveAspectRatio="none"></svg></div>
+    <div class="dica" id="dicaSaldo"></div>
+    <div class="legenda"><span><i></i>só as contas</span><span><i class="trac"></i>no seu ritmo</span></div></div>`);
+
+  // 6. simulador
+  h.push(`<div class="card"><div class="titulo">E se eu guardar…?</div>
+    <div class="sim">
+      <div><label for="simValor">Guardar (R$)</label><input id="simValor" inputmode="decimal" placeholder="0" value="${esc(S.sim.valor)}"></div>
+      <div><label for="simAte">Pagar até</label><input id="simAte" type="date" value="${esc(S.sim.ate)}"></div>
+    </div>
+    <button class="btnGrande" data-acao="simular" ${S.sim.calculando ? 'disabled' : ''}>${S.sim.calculando ? 'Calculando…' : 'Calcular'}</button>
+    <div class="res" id="simRes">${htmlSim(S.sim.res || D.simulacao)}</div>
+    <p class="pequeno" style="margin-top:10px">Deixe a data vazia para usar o próximo salário. Encargos são estimativas.</p></div>`);
+
+  // 7. contas e salários
+  let caixa = D.conta;
+  const linhas = D.eventos.map((e, i) => {
+    caixa += e.valor;
+    const d = dt(e.dia);
+    const botao = e.chave && e.valor < 0 ? `<button class="paguei" data-pagar="${esc(e.chave)}" data-rotulo="Paguei">Paguei</button>` : '';
+    return `<div class="ev ${i >= 6 && !S.expandir.eventos ? 'escondido' : ''}">
+      <div class="data ${e.dia === HOJE ? 'hojeD' : ''}"><b>${e.dia.slice(8, 10)}</b><span>${e.dia === HOJE ? 'hoje' : MES[d.getMonth()]}</span></div>
+      <div><div class="nome">${esc(e.nome)}</div><div class="saldo ${caixa < 0 ? 'neg' : ''}">saldo depois: ${R(caixa)}</div></div>
+      <div class="dir"><div class="v ${e.valor > 0 ? 'ent' : ''}">${e.valor > 0 ? '+' : '−'}${R(Math.abs(e.valor)).replace('−', '')}</div>${botao}</div></div>`;
+  });
+  h.push(`<div class="card"><div class="titulo">Contas e salários</div>${linhas.join('') || '<div class="vazio">Nada programado.</div>'}
+    ${linhas.length > 6 && !S.expandir.eventos ? `<button class="mais" data-expandir="eventos">Ver todos (${linhas.length})</button>` : ''}</div>`);
+
+  // 8. cartões
+  if (D.faturas.length) h.push(`<div class="card"><div class="titulo">Cartões</div>${D.faturas.map(f => `
+    <div class="fat"><div>${esc(f.nome.replace(/\s*\(.*\)/, ''))}
+      ${f.vencida ? '<span class="tag er">vencida</span>' : /seguinte/.test(f.nome) ? '<span class="tag mu">seguinte</span>' : '<span class="tag pri">próxima</span>'}
+      <small>${f.vencida ? `venceu ${dm(f.venceu)} · encargos ≈ ${R(f.juros)} (≈ ${R2(f.jurosDia)}/dia) · estimativa` : `vence ${quando(f.dia)}`}</small></div>
+      <div class="v">${R2(f.valor)}</div></div>`).join('')}</div>`);
+
+  // 9. dívidas
+  const div = [];
+  D.missoes.forEach(m => {
+    const total = m.falta + m.pago;
+    const guardado = /facul/i.test(m.nome) ? D.faculdadeGuardado : 0;
+    const feito = total ? Math.min(1, (m.pago + guardado) / total) : 1;
+    div.push(`<div style="margin-bottom:16px">
+      <div class="linha"><b>🎓 ${esc(m.nome)}</b><span class="v">${R(Math.max(0, m.falta - guardado))}</span></div>
+      <div class="barra"><i style="width:${Math.max(3, Math.round(feito * 100))}%"></i></div>
+      <div class="linha pequeno"><span>${Math.round(feito * 100)}% pago · em dia até ${dm(m.prazo)} (${m.diasAtePrazo} dias)</span><span>${R(m.porMes)}/mês</span></div>
+      ${guardado ? `<div class="pequeno" style="margin-top:4px">Guardado: ${R(guardado)}</div>` : ''}
+      <div class="chips">${m.parcelas.map(o => o.pago
+        ? `<span class="chip pago">✓ ${dm(o.dia)}</span>`
+        : `<button class="chip ${o.dia < HOJE ? 'venc' : ''}" data-pagar="${esc(o.chave)}" data-rotulo="${o.dia < HOJE ? '!' : '•'} ${dm(o.dia)}">${o.dia < HOJE ? '!' : '•'} ${dm(o.dia)}</button>`).join('')}</div>
+      <div class="pequeno" style="margin-top:8px">Toque numa parcela para marcar como paga.</div></div>`);
+  });
+  if (D.cheque) div.push(`<div class="linha"><b>🔥 Cheque especial</b><span class="v">${R(D.cheque)}</span></div>
+    <div class="pequeno" style="margin-top:2px">Pago e retomado a cada salário. Cada real a menos que você pega de volta é juros a menos.</div>`);
+  (D.emprestimos || []).forEach(e => div.push(`<div class="linha" style="margin-top:12px"><b>💼 ${esc(e.nome)}</b><span class="pequeno">${e.restantes != null && e.total != null ? `restam ${e.restantes} de ${e.total}` : ''}</span></div>`));
+  D.atrasadas.forEach(o => div.push(`<div class="aviso">❗ ${esc(o.nome)} venceu em ${dm(o.dia)} · ${R(o.valor)}</div>`));
+  h.push(`<div class="card"><div class="titulo">Dívidas</div>${div.join('') || '<div class="vazio">Nenhuma 🎉</div>'}</div>`);
+
+  // 10. gastos
+  const G = D.gastos;
+  const dif = G.semana - G.semanaAnterior;
+  const maxDia = Math.max(1, ...D.porDia.map(x => x.valor));
+  const maxCat = Math.max(1, ...G.top.map(x => x[1]));
+  const maxFav = Math.max(1, ...(D.favorecidos || []).map(x => x.total));
+  h.push(`<div class="card"><div class="titulo">Gastos do dia a dia<small>sem contas, empréstimos e apostas</small></div>
+    <div class="trio" style="margin-top:0">
+      <div class="mini"><b>${R(G.semana)}</b><span>últimos 7 dias</span>${G.semanaAnterior ? `<em style="color:${dif > 0 ? 'var(--er)' : 'var(--ok)'}"> ${dif > 0 ? '▲' : '▼'} ${R(Math.abs(dif))}</em>` : ''}</div>
+      <div class="mini"><b>${G.desdeSalario ? R(G.desdeSalario.total) : '—'}</b><span>desde o salário${G.desdeSalario ? ' de ' + dm(G.desdeSalario.desde) : ''}</span></div>
+      <div class="mini"><b>${R(G.mes)}</b><span>no mês</span></div></div>
+    <div class="grafico" id="barras">${D.porDia.map((x, i) => `<button data-i="${i}" aria-label="${dm(x.dia)}" class="${x.dia === HOJE ? 'hoje' : ''}"><i style="height:${Math.max(3, Math.round(x.valor / maxDia * 100))}%"></i></button>`).join('')}</div>
+    <div class="eixo"><span>${dm(D.porDia[0].dia)}</span><span id="dicaBarra">toque numa barra</span><span>hoje</span></div>
+    <div class="sub2">Por categoria (mês)</div>
+    ${G.top.map(([c, v]) => `<div class="cat"><div class="linha"><span>${esc(c)}</span><span class="v">${R(v)}</span></div><div class="barra"><i style="width:${Math.round(v / maxCat * 100)}%"></i></div></div>`).join('') || '<div class="vazio">Sem gastos no mês.</div>'}
+    ${(D.favorecidos || []).length ? `<div class="sub2">Para quem foi o Pix (30 dias)</div>${D.favorecidos.map(f => `<div class="cat"><div class="linha"><span>${esc(f.nome)} <span class="pequeno">${f.n}x</span></span><span class="v">${R(f.total)}</span></div><div class="barra"><i style="width:${Math.round(f.total / maxFav * 100)}%"></i></div></div>`).join('')}<p class="pequeno">Para dar nome a alguém: mande "apelido NOME = Primo" no Telegram.</p>` : ''}
+  </div>`);
+
+  // 11. apostas (só se houve movimento; o que importa é o líquido)
+  const AP = D.apostas;
+  if (AP && AP.d90 && AP.d90.n > 0) h.push(`<div class="card"><div class="titulo">Apostas<small>resultado líquido, fora dos gastos</small></div>
+    <div class="linha"><span>Últimos 30 dias</span><span class="v" style="color:${AP.d30.liquido < 0 ? 'var(--er)' : 'var(--ok)'}">${R(AP.d30.liquido)}</span></div>
+    <div class="linha" style="margin-top:6px"><span>Últimos 90 dias</span><span class="v" style="color:${AP.d90.liquido < 0 ? 'var(--er)' : 'var(--ok)'}">${R(AP.d90.liquido)}</span></div>
+    <p class="pequeno" style="margin-top:8px">Movimentado em 90 dias: saiu ${R(AP.d90.saidas)} e entrou ${R(AP.d90.entradas)}.</p></div>`);
+
+  // 12. últimas compras
+  const grupos = [];
+  D.ultimas.forEach((m, i) => {
+    const rotulo = m.dia === HOJE ? 'Hoje' : diasAte(m.dia) === -1 ? 'Ontem' : SEM[dt(m.dia).getDay()] + ', ' + dm(m.dia);
+    const extra = i >= 8 && !S.expandir.compras ? 'escondido' : '';
+    if (!grupos.length || grupos[grupos.length - 1].rotulo !== rotulo) grupos.push({ rotulo, itens: [], extra });
+    grupos[grupos.length - 1].itens.push(`<div class="compra ${extra}"><div>${esc(m.descricao)}<small>${esc(m.categoria)} · ${esc(m.conta)}</small></div><div class="v">${R2(m.valor)}</div></div>`);
+  });
+  h.push(`<div class="card"><div class="titulo">Últimas compras</div>${grupos.map(g => `<div class="diaG ${g.extra}">${g.rotulo}</div>${g.itens.join('')}`).join('') || '<div class="vazio">Nada ainda.</div>'}
+    ${D.ultimas.length > 8 && !S.expandir.compras ? `<button class="mais" data-expandir="compras">Ver mais</button>` : ''}</div>`);
+
+  // 13. banco
+  if ((D.itens || []).length) h.push(`<div class="card"><div class="titulo">Conexão com o banco</div>${D.itens.map(i => `<div class="linha pequeno" style="padding:3px 0"><span>${esc(i.conector || 'Banco')} · ${esc(i.status || (i.erro ? 'erro' : ''))}</span><span>${i.ultima ? 'atualizado ' + hhmm(i.ultima) : ''}</span></div>`).join('')}
+    <p class="pequeno" style="margin-top:6px">O acesso vale até ${D.itens[0].consentimento ? new Date(D.itens[0].consentimento).toLocaleDateString('pt-BR') : '—'}.</p></div>`);
+
+  // 14. instalar
+  const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (!standalone && ler(LS.dica) !== 'ok') h.push(`<div class="card instalar"><div class="titulo">Deixe na tela inicial</div>
+    <p class="pequeno">No Safari: toque em <b>Compartilhar</b> (o quadrado com a seta) → <b>Adicionar à Tela de Início</b>. Vira um ícone que abre em tela cheia.</p>
+    <button data-acao="dicaok">Entendi, não mostrar mais</button></div>`);
+
+  $('app').innerHTML = h.join('');
+  desenharGrafico();
+}
+
+// ------------------------------------------------------------------ simulador
+function htmlSim(s) {
+  if (!s) return '';
+  const L = [];
+  L.push(`<p class="pequeno">${s.guardar ? 'Guardando ' + R(s.guardar) : 'Sem guardar nada extra'} até ${dm(s.alvo)} · ${R(s.minDia)}/dia para viver</p>`);
+  if (!s.cartoes.length && !s.nubank) L.push('<div class="bloco ok">Nenhuma fatura de cartão pendente. 🎉</div>');
+  s.cartoes.forEach(c => L.push(`<div class="bloco"><b>💳 ${esc(c.nome)}</b> · ${R(c.valor)} · venceu ${dm(c.venceu)}
+    <ul><li>Pagar hoje: ≈ ${R(c.valor + c.encargosHoje)} (encargos ≈ ${R(c.encargosHoje)})${s.podePagarHoje ? ' ✅ dá' : ''}</li>
+    <li>Pagar em ${dm(s.alvo)}: ≈ ${R(c.valor + c.encargosAlvo)} (encargos ≈ ${R(c.encargosAlvo)}) · cada dia a mais ≈ ${R2(c.porDia)}</li></ul>
+    <div class="${s.sobraAposCartoes >= 0 ? 'ok' : 'ruim'}" style="margin-top:6px">${s.sobraAposCartoes >= 0 ? `Em ${dm(s.alvo)}, depois de pagar, sobram ${R(s.sobraAposCartoes)} ✅` : `Em ${dm(s.alvo)}, mesmo assim faltam ${R(-s.sobraAposCartoes)} ❌`}</div></div>`));
+  if (s.nubank) { const n = s.nubank;
+    L.push(`<div class="bloco"><b>💳 ${esc(n.nome)}</b> · ${R(n.valor)} · vence ${dm(n.dia)}
+    <div class="${n.cabe ? 'ok' : 'ruim'}" style="margin-top:4px">${n.cabe ? `No vencimento sobram ${R(n.sobraNoVencimento)} ✅` : `No vencimento faltam ${R(n.falta)} ❌`}</div>
+    ${n.cabe ? '' : `<ul><li>Pagando em ${dm(n.pagarEm)} (salário): +${R(n.encargosSeAtrasar)} de encargos</li></ul>`}</div>`); }
+  L.push(s.necessario > 0
+    ? `<div class="meta">🎯 Para pagar tudo no prazo, junte <b>${R(s.necessario)}</b> a mais até ${dm(s.dataNecessario)}.</div>`
+    : `<div class="meta">🎯 Com isso dá para pagar tudo no prazo. ✅</div>`);
+  return L.join('');
+}
+
+async function simular() {
+  S.sim.calculando = true; render();
+  try {
+    const params = { valor: String(S.sim.valor || '0').replace(',', '.') };
+    if (S.sim.ate) params.ate = S.sim.ate;
+    const r = await api('simular', params);
+    if (r.ok === false) throw new Error(r.erro || 'erro');
+    S.sim.res = r;
+  } catch (e) { S.aviso = 'Não consegui simular agora'; S.avisoRuim = true; }
+  S.sim.calculando = false; render();
+}
+
+// ------------------------------------------------------------------ gráfico do saldo
+function desenharGrafico() {
+  const el = $('svgSaldo'); if (!el || !S.D) return;
+  const D = S.D, Sr = D.serie, W = 340, H = 150, PT = 14, PB = 22;
+  const base = Sr.map(x => x.caixa), ritmo = Sr.map(x => x.caixaRitmo != null ? x.caixaRitmo : x.caixa);
+  const max = Math.max(0, ...base, ...ritmo), min = Math.min(0, ...base, ...ritmo);
+  const amp = (max - min) || 1;
+  const x = i => i / (Sr.length - 1) * W;
+  const y = v => PT + (max - v) / amp * (H - PT - PB);
+  const zero = y(0);
+  const linha = arr => 'M' + arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L');
+  const area = `M0,${zero} L${base.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L')} L${W},${zero} Z`;
+  let svg = `<defs>
+    <linearGradient id="gOk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399" stop-opacity=".35"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gEr" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fb7185" stop-opacity=".45"/><stop offset="1" stop-color="#fb7185" stop-opacity="0"/></linearGradient>
+    <clipPath id="acima"><rect x="0" y="0" width="${W}" height="${zero}"/></clipPath>
+    <clipPath id="abaixo"><rect x="0" y="${zero}" width="${W}" height="${Math.max(0, H - zero)}"/></clipPath></defs>
+    <path d="${area}" fill="url(#gOk)" clip-path="url(#acima)"/><path d="${area}" fill="url(#gEr)" clip-path="url(#abaixo)"/>
+    <line x1="0" x2="${W}" y1="${zero}" y2="${zero}" stroke="rgba(255,255,255,.18)" stroke-dasharray="3 4"/>
+    <path d="${linha(ritmo)}" fill="none" stroke="#fbbf24" stroke-width="1.6" stroke-dasharray="4 3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <path d="${linha(base)}" fill="none" stroke="#7c9cff" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  D.eventos.filter(e => e.valor > 0).forEach(e => {
+    const i = Sr.findIndex(p => p.dia === e.dia);
+    if (i >= 0) svg += `<line x1="${x(i)}" x2="${x(i)}" y1="${PT - 6}" y2="${H - PB}" stroke="rgba(52,211,153,.35)" stroke-dasharray="2 3"/>`;
+  });
+  let iMin = 0; Sr.forEach((p, i) => { if (p.caixa < Sr[iMin].caixa) iMin = i; });
+  svg += `<circle cx="${x(iMin)}" cy="${y(Sr[iMin].caixa)}" r="4" fill="${Sr[iMin].caixa < 0 ? '#fb7185' : '#34d399'}"/>`;
+  [0, 7, 14, 21, 28, 35].filter(i => i < Sr.length).forEach(i => {
+    svg += `<text x="${Math.min(W - 18, Math.max(2, x(i) - 12))}" y="${H - 6}" fill="#5f697c" font-size="10">${i === 0 ? 'hoje' : dm(Sr[i].dia)}</text>`;
+  });
+  svg += `<line id="cursor" x1="0" x2="0" y1="${PT - 6}" y2="${H - PB}" stroke="#eef2f8" stroke-opacity=".5" visibility="hidden"/><circle id="cursorPt" r="4" fill="#eef2f8" visibility="hidden"/>`;
+  el.innerHTML = svg;
+  $('menor').textContent = `menor: ${R(Sr[iMin].caixa)} em ${dm(Sr[iMin].dia)}`;
+  const dica = $('dicaSaldo');
+  dica.innerHTML = '<span>Toque no gráfico para ver cada dia</span><span>linhas verdes = salário</span>';
+  const mostrar = ev => {
+    const r = el.getBoundingClientRect();
+    const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    const i = Math.max(0, Math.min(Sr.length - 1, Math.round(cx / r.width * (Sr.length - 1))));
+    const c = $('cursor'), pt = $('cursorPt');
+    c.setAttribute('x1', x(i)); c.setAttribute('x2', x(i)); c.setAttribute('visibility', 'visible');
+    pt.setAttribute('cx', x(i)); pt.setAttribute('cy', y(Sr[i].caixa)); pt.setAttribute('visibility', 'visible');
+    const doDia = D.eventos.filter(e => e.dia === Sr[i].dia).map(e => esc(e.nome)).join(', ');
+    dica.innerHTML = `<span>${quando(Sr[i].dia)}${doDia ? ' · ' + doDia : ''}</span><b style="color:${Sr[i].caixa < 0 ? 'var(--er)' : 'var(--tx)'}">${R(Sr[i].caixa)}</b>` +
+      `<b style="color:var(--av)">${R(Sr[i].caixaRitmo != null ? Sr[i].caixaRitmo : Sr[i].caixa)}</b>`;
+  };
+  el.addEventListener('touchstart', mostrar, { passive: true });
+  el.addEventListener('touchmove', mostrar, { passive: true });
+  el.addEventListener('click', mostrar);
+}
+
+// ------------------------------------------------------------------ toques (um ouvinte só)
+document.addEventListener('click', async ev => {
+  const alvo = ev.target.closest('button, [data-acao]'); if (!alvo) return;
+  if (alvo.id === 'atualizar') { S.aviso = ''; carregar({ sync: true }); return; }
+  if (alvo.dataset.acao === 'tentar') { carregar(); return; }
+  if (alvo.dataset.acao === 'simular') { simular(); return; }
+  if (alvo.dataset.acao === 'dicaok') { guardar(LS.dica, 'ok'); render(); return; }
+  if (alvo.dataset.expandir) { S.expandir[alvo.dataset.expandir] = true; render(); return; }
+  if (alvo.closest('#barras') && alvo.dataset.i !== undefined) {
+    document.querySelectorAll('#barras button').forEach(b => b.classList.remove('sel'));
+    alvo.classList.add('sel');
+    const x = S.D.porDia[Number(alvo.dataset.i)];
+    $('dicaBarra').textContent = `${quando(x.dia)}: ${R2(x.valor)}`;
+    return;
+  }
+  if (alvo.dataset.pagar) {
+    if (!alvo.classList.contains('conf')) {                    // 1º toque pede confirmação
+      document.querySelectorAll('[data-pagar].conf').forEach(e => { e.classList.remove('conf'); e.textContent = e.dataset.rotulo || 'Paguei'; });
+      alvo.classList.add('conf'); alvo.textContent = 'Confirmar ✓';
+      setTimeout(() => { if (alvo.classList.contains('conf')) { alvo.classList.remove('conf'); alvo.textContent = alvo.dataset.rotulo || 'Paguei'; } }, 4000);
+      return;
+    }
+    alvo.textContent = '…'; alvo.disabled = true;
+    try { const r = await enviar('pagar', { chave: alvo.dataset.pagar }); S.aviso = r.aviso || ''; S.avisoRuim = r.ok === false; }
+    catch (e) { S.aviso = 'Não consegui marcar agora. Tente de novo.'; S.avisoRuim = true; }
+    S.carregando = false; carregar();
+  }
+});
+document.addEventListener('input', ev => {
+  if (ev.target.id === 'simValor') S.sim.valor = ev.target.value;
+  if (ev.target.id === 'simAte') S.sim.ate = ev.target.value;
+});
+document.addEventListener('visibilitychange', () => {                // voltou para o app: busca de novo se passou de 2 minutos
+  if (document.visibilityState === 'visible' && CFG && (!S.quando || Date.now() - S.quando > 120000)) carregar();
+});
+
+// ------------------------------------------------------------------ início
+(function iniciar() {
+  cabecalho();
+  try { const c = JSON.parse(ler(LS.dados)); if (c && c.D) { S.D = c.D; S.quando = c.t; HOJE = new Date().toISOString().slice(0, 10); } } catch (e) { /* sem cache */ }
+  render();                                                             // mostra o último dado guardado na hora
+  if (CFG) carregar();
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
