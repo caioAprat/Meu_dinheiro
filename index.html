@@ -10,7 +10,11 @@
 <meta name="apple-mobile-web-app-title" content="Meu dinheiro">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="robots" content="noindex,nofollow">
-<link rel="manifest" href="manifest.webmanifest">
+<script>
+  // No iPhone, "Adicionar à Tela de Início" usaria o start_url do manifesto e perderia o #k=... do link.
+  // Sem manifesto, o ícone guarda o endereço completo. No Android o manifesto continua.
+  if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) document.write('<link rel="manifest" href="manifest.webmanifest">');
+</script>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <style>
