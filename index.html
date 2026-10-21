@@ -155,6 +155,15 @@
   @keyframes brilho { to { background-position: -200% 0; } }
   .instalar { border-color: rgba(124,156,255,.35); }
   .instalar button { color: var(--pri); font-size: 13px; margin-top: 8px; }
+  .marco { display: flex; gap: 8px; padding: 4px 0; font-size: 14px; }
+  .marco.ruim { color: var(--mu); }
+  .faixa { width: 100%; margin: 10px 0 2px; accent-color: var(--pri); height: 28px; }
+  .usar { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 10px 12px; margin-top: 6px;
+          background: var(--card2); border-radius: 12px; font-size: 13.5px; }
+  .usar span { color: var(--pri); font-weight: 650; white-space: nowrap; }
+  .tabela { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .tl { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; padding: 5px 0; border-top: 1px solid var(--linha); }
+  .tl span:not(:first-child) { text-align: right; } .tl.cab { color: var(--di); border-top: 0; }
   footer { text-align: center; color: var(--di); font-size: 11.5px; margin-top: 18px; line-height: 1.6; }
 </style>
 </head>
@@ -306,6 +315,10 @@ function render() {
   h.push(`<div class="card ${pior}"><div class="titulo">O que fazer agora</div>${(D.acoes || []).map(x =>
     `<div class="acao"><div class="ic">${iconeN[x.nivel]}</div><div><b>${esc(x.titulo)}</b><p>${esc(x.texto)}</p></div></div>`).join('')}</div>`);
 
+  // 3b. plano de saída das dívidas
+  const PD = S.plano || D.planoDividas;
+  if (PD) h.push(htmlPlano(PD));
+
   // 4. plano do salário
   if (D.plano) {
     const linhas = D.plano.split('\n');
@@ -423,6 +436,73 @@ function render() {
   desenharGrafico();
 }
 
+// ------------------------------------------------------------------ plano de saída das dívidas
+const MESC = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+function htmlPlano(P) {
+  const d = P.hojeDividas, total = d.cartoes + d.faculdade + d.cheque;
+  const max = Math.max(3000, Math.ceil(P.ritmoMes * 1.5 / 100) * 100);
+  const linha = (ok, txt) => `<div class="marco ${ok ? 'ok' : 'ruim'}"><span>${ok ? '✅' : '❌'}</span><span>${txt}</span></div>`;
+  const L = [];
+  L.push(`<div class="card plano-d"><div class="titulo">Plano para sair das dívidas<small>${R(total)} hoje</small></div>`);
+  L.push(`<div class="chips" style="margin:0 0 12px">${d.cartoes ? `<span class="chip venc">Cartão vencido ${R(d.cartoes)}</span>` : ''}${d.faculdade ? `<span class="chip">Faculdade ${R(d.faculdade)}</span>` : ''}${d.cheque ? `<span class="chip">Cheque especial ${R(d.cheque)}</span>` : ''}</div>`);
+  L.push(`<label class="pequeno" for="gastoPlano">Dia a dia por mês: <b id="gastoTxt" style="color:var(--tx)">${R(P.gastoMes)}</b>${P.usandoRitmo ? ' <span class="tag mu">seu ritmo</span>' : ''}</label>
+    <input id="gastoPlano" type="range" min="0" max="${max}" step="50" value="${Math.min(max, P.gastoMes)}" class="faixa">
+    <div class="eixo"><span>R$ 0</span><span>seu ritmo: ${R(P.ritmoMes)}</span><span>${R(max)}</span></div>`);
+  L.push('<div style="margin-top:12px">');
+  P.cartoes.forEach(c => L.push(linha(!!c.quitadoEm, c.quitadoEm ? `${esc(c.nome.replace(/\s*\(.*\)/, ''))} quitado em <b>${dm(c.quitadoEm)}</b>` : `${esc(c.nome.replace(/\s*\(.*\)/, ''))}: não quita em 12 meses`)));
+  if (P.faculdade) { const f = P.faculdade, ok = f.quitadoEm && f.quitadoEm <= f.prazo;
+    L.push(linha(ok, ok ? `Faculdade em dia em <b>${dm(f.quitadoEm)}</b> (prazo ${dm(f.prazo)})` : `Faculdade: no prazo (${dm(f.prazo)}) faltariam <b>${R(f.faltaNoPrazo)}</b>`)); }
+  L.push(linha(!!P.chequeZeradoEm, P.chequeZeradoEm ? `Cheque especial zerado em <b>${dm(P.chequeZeradoEm)}</b>` : 'Cheque especial: não zera em 12 meses'));
+  if (P.estouro) L.push(`<div class="aviso">🚨 O cheque especial estoura o limite em ${dm(P.estouro.dia)}.</div>`);
+  L.push('</div>');
+  L.push(`<div class="meta" style="margin-top:12px">${P.livreEm ? `🏁 Livre das dívidas caras em <b>${dm(P.livreEm)}</b>` : '🏁 Com esse gasto, não fica livre em 12 meses'}${P.jurosCheque + P.jurosCartao > 0 ? `<div class="pequeno" style="margin-top:4px">Juros no caminho ≈ ${R(P.jurosCheque + P.jurosCartao)}</div>` : ''}</div>`);
+
+  // gráfico da dívida total
+  const sr = P.serie || [];
+  if (sr.length > 1) {
+    const W = 340, H = 90, mx = Math.max(1, ...sr.map(x => x.divida));
+    const pts = sr.map((x, i) => `${(i / (sr.length - 1) * W).toFixed(1)},${(6 + (1 - x.divida / mx) * (H - 18)).toFixed(1)}`).join(' L');
+    L.push(`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:90px;margin-top:12px;display:block">
+      <path d="M0,${H - 12} L${pts} L${W},${H - 12} Z" fill="rgba(251,113,133,.15)"/>
+      <path d="M${pts}" fill="none" stroke="#fb7185" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      <text x="2" y="${H - 1}" fill="#5f697c" font-size="10">hoje</text><text x="${W - 40}" y="${H - 1}" fill="#5f697c" font-size="10">12 meses</text></svg>
+      <div class="pequeno">Dívida total (cartão + faculdade + cheque) semana a semana</div>`);
+  }
+
+  // metas
+  const m = P.metas, metas = [];
+  if (m.faculdade) metas.push(m.faculdade.gastoMax !== null
+    ? `<button class="usar" data-gasto="${m.faculdade.gastoMax}">Faculdade em dia até ${dm(m.faculdade.prazo)}: até <b>${R(m.faculdade.gastoMax)}/mês</b> no dia a dia <span>usar ›</span></button>`
+    : `<div class="pequeno">Faculdade até ${dm(m.faculdade.prazo)}: mesmo sem gastar nada faltariam <b>${R(m.faculdade.faltaSemGastar)}</b>. Precisa de renda extra.</div>`);
+  metas.push(m.livre6.gastoMax !== null
+    ? `<button class="usar" data-gasto="${m.livre6.gastoMax}">Livre de tudo em 6 meses: até <b>${R(m.livre6.gastoMax)}/mês</b> <span>usar ›</span></button>`
+    : `<div class="pequeno">Livre de tudo em 6 meses: só cortando gastos não dá; precisa de renda extra.</div>`);
+  L.push(`<div class="sub2">Metas</div>${metas.join('')}`);
+
+  if (P.pagamentos && P.pagamentos.length) {
+    L.push('<div class="sub2">Próximos pagamentos do plano</div>');
+    P.pagamentos.slice(0, 4).forEach(x => L.push(`<div class="linha" style="padding:3px 0"><span>${quando(x.dia)} · ${esc(x.nome.replace(/\s*\(.*\)/, ''))}</span><span class="v">${R(x.valor)}</span></div>`));
+  }
+  if (S.expandir.meses) {
+    L.push(`<div class="sub2">Mês a mês</div><div class="tabela"><div class="tl cab"><span>Mês</span><span>Entra</span><span>Sai*</span><span>Dívida</span></div>${P.meses.map(x =>
+      `<div class="tl"><span>${MESC[Number(x.mes.slice(5, 7)) - 1]}/${x.mes.slice(2, 4)}</span><span>${R(x.entradas)}</span><span>${R(x.compromissos + x.diaADia)}</span><span>${R(x.dividaFim)}</span></div>`).join('')}</div>
+      <p class="pequeno">*Sai = contas, faturas e dia a dia. Ordem do plano: cartão vencido → faculdade → cheque especial.</p>`);
+  } else L.push('<button class="mais" data-expandir="meses">Ver mês a mês</button>');
+  L.push('</div>');
+  return L.join('');
+}
+
+let planoTimer = null;
+async function recalcularPlano(valor) {
+  clearTimeout(planoTimer);
+  planoTimer = setTimeout(async () => {
+    try {
+      const r = await api('planodividas', { gasto: String(valor) });
+      if (r && r.ok !== false && r.metas) { S.plano = r; render(); }
+    } catch (e) { S.aviso = 'Não consegui recalcular o plano agora'; S.avisoRuim = true; render(); }
+  }, 250);
+}
+
 // ------------------------------------------------------------------ simulador
 function htmlSim(s) {
   if (!s) return '';
@@ -512,6 +592,7 @@ document.addEventListener('click', async ev => {
   if (alvo.id === 'atualizar') { S.aviso = ''; carregar({ sync: true }); return; }
   if (alvo.dataset.acao === 'tentar') { carregar(); return; }
   if (alvo.dataset.acao === 'simular') { simular(); return; }
+  if (alvo.dataset.gasto !== undefined) { const g = Number(alvo.dataset.gasto); const el = $('gastoPlano'); if (el) el.value = g; $('gastoTxt').textContent = R(g); recalcularPlano(g); return; }
   if (alvo.dataset.acao === 'dicaok') { guardar(LS.dica, 'ok'); render(); return; }
   if (alvo.dataset.expandir) { S.expandir[alvo.dataset.expandir] = true; render(); return; }
   if (alvo.closest('#barras') && alvo.dataset.i !== undefined) {
@@ -537,7 +618,9 @@ document.addEventListener('click', async ev => {
 document.addEventListener('input', ev => {
   if (ev.target.id === 'simValor') S.sim.valor = ev.target.value;
   if (ev.target.id === 'simAte') S.sim.ate = ev.target.value;
+  if (ev.target.id === 'gastoPlano') $('gastoTxt').textContent = R(Number(ev.target.value));
 });
+document.addEventListener('change', ev => { if (ev.target.id === 'gastoPlano') recalcularPlano(Number(ev.target.value)); });
 document.addEventListener('visibilitychange', () => {                // voltou para o app: busca de novo se passou de 2 minutos
   if (document.visibilityState === 'visible' && CFG && (!S.quando || Date.now() - S.quando > 120000)) carregar();
 });
