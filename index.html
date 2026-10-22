@@ -490,9 +490,10 @@ function htmlPlano(P, erro) {
   const nomeCurto = n => esc(n.replace(/\s*\(.*\)/, ''));
   const L = [];
   L.push(`<section class="card plano-d" aria-busy="false"><h2 class="titulo">Plano para sair das dívidas<small>${R(total)} em dívidas hoje</small></h2>`);
-  L.push(P.livreEm
-    ? `<div class="resposta ok"><span aria-hidden="true">🏁 </span>Livre das dívidas caras em ${mesAno(P.livreEm)}</div>`
-    : `<div class="resposta ruim"><span aria-hidden="true">🏁 </span>Com esse gasto, não fica livre em 12 meses</div>`);
+  L.push(P.emDiaEm
+    ? `<div class="resposta ok"><span aria-hidden="true">✅ </span>Em dia (nada atrasado) a partir de ${mesAno(P.emDiaEm)}</div>`
+    : `<div class="resposta ruim"><span aria-hidden="true">⏳ </span>Com esse gasto, não fica em dia em 12 meses</div>`);
+  L.push(`<div class="pequeno" style="margin:-8px 0 12px">${P.livreEm ? `Cheque especial zerado também em ${mesAno(P.livreEm)}` : 'O cheque especial não zera em 12 meses (ele não é conta atrasada)'}</div>`);
   L.push(`<div class="rotulos">${d.cartoes ? `<span>Cartão vencido <b>${R(d.cartoes)}</b></span>` : ''}${d.faculdade ? `<span>Faculdade atrasada <b>${R(d.faculdade)}</b></span>` : ''}${d.cheque ? `<span>Cheque especial <b>${R(d.cheque)}</b></span>` : ''}</div>`);
   L.push(`<label class="pequeno" for="gastoPlano" style="display:block;margin-top:10px">Dia a dia por mês: <b id="gastoTxt" style="color:var(--tx)">${R(valor)}</b>${P.usandoRitmo ? ' <span class="tag mu">seu ritmo</span>' : ''}</label>
     <div class="controle">
@@ -513,6 +514,9 @@ function htmlPlano(P, erro) {
 
   // metas
   const m = P.metas, metas = [];
+  if (m.emDia) metas.push(m.emDia.gastoMax !== null
+    ? `<button class="usar" data-gasto="${m.emDia.gastoMax}">Em dia até ${mesAno(m.emDia.ate)}: até <b>${R(m.emDia.gastoMax)}/mês</b> no dia a dia <span>usar ›</span></button>`
+    : `<div class="pequeno">Em dia até ${mesAno(m.emDia.ate)}: nem gastando zero dá. Precisa de renda extra.</div>`);
   if (m.faculdade) metas.push(m.faculdade.gastoMax !== null
     ? `<button class="usar" data-gasto="${m.faculdade.gastoMax}">Faculdade em dia até ${mesAno(m.faculdade.prazo)}: até <b>${R(m.faculdade.gastoMax)}/mês</b> no dia a dia <span>usar ›</span></button>`
     : `<div class="pequeno">Faculdade até ${mesAno(m.faculdade.prazo)}: mesmo sem gastar nada faltariam <b>${R(m.faculdade.faltaSemGastar)}</b>. Precisa de renda extra.</div>`);
@@ -538,7 +542,7 @@ function htmlPlano(P, erro) {
     }
     L.push(`<div class="sub2">Mês a mês</div><div class="tabela"><div class="tl cab"><span>Mês</span><span>Entra</span><span>Sai*</span><span>Dívida</span></div>${P.meses.map(x =>
       `<div class="tl"><span>${MESC[Number(x.mes.slice(5, 7)) - 1]}/${x.mes.slice(2, 4)}</span><span>${R(x.entradas)}</span><span>${R(x.compromissos + x.diaADia)}</span><span>${R(x.dividaFim)}</span></div>`).join('')}</div>
-      <p class="pequeno">*Sai = contas, faturas e dia a dia. Ordem do plano: cartão vencido → faculdade → cheque especial.</p>`);
+      <p class="pequeno">*Sai = contas, faturas e dia a dia. Ordem do plano: cartão vencido → faculdade (o que vence) → cheque especial.</p>`);
   } else L.push('<button class="mais" data-expandir="planoDetalhe">Ver detalhes (pagamentos, gráfico, mês a mês)</button>');
   L.push('</section>');
   return L.join('');
