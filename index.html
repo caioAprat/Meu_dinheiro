@@ -390,9 +390,10 @@ function render() {
     const guardado = /facul/i.test(m.nome) ? D.faculdadeGuardado : 0;
     const feito = total ? Math.min(1, (m.pago + guardado) / total) : 1;
     div.push(`<div style="margin-bottom:16px">
-      <div class="linha"><b><span aria-hidden="true">🎓 </span>${esc(m.nome)}</b><span class="v">${R(Math.max(0, m.falta - guardado))} <span class="pequeno">falta pagar</span></span></div>
+      <div class="linha"><b><span aria-hidden="true">🎓 </span>${esc(m.nome)}</b><span class="v" style="color:${m.atrasado ? 'var(--er)' : 'var(--ok)'}">${m.atrasado ? R(m.atrasado) + ' <span class="pequeno">atrasado</span>' : 'em dia'}</span></div>
+      <div class="pequeno">${m.qtdAtrasadas ? `${m.qtdAtrasadas} parcela${m.qtdAtrasadas > 1 ? 's' : ''} vencida${m.qtdAtrasadas > 1 ? 's' : ''}` : 'nenhuma vencida'}${m.qtdAVencer ? ` · mais ${R(m.aVencer)} a vencer (${m.qtdAVencer})` : ''}</div>
       <div class="barra"><i style="width:${Math.max(3, Math.round(feito * 100))}%"></i></div>
-      <div class="linha pequeno"><span>${Math.round(feito * 100)}% pago · em dia até ${mesAno(m.prazo)} (${m.diasAtePrazo} dias)</span><span>${R(m.porMes)}/mês</span></div>
+      <div class="linha pequeno"><span>${Math.round(feito * 100)}% pago · prazo ${mesAno(m.prazo)} (${m.diasAtePrazo} dias)</span></div>
       ${guardado ? `<div class="pequeno" style="margin-top:4px">Guardado: ${R(guardado)}</div>` : ''}
       <div class="chips">${m.parcelas.map(o => o.pago
         ? `<span class="chip pago">✓ ${dm(o.dia)}</span>`
@@ -492,7 +493,7 @@ function htmlPlano(P, erro) {
   L.push(P.livreEm
     ? `<div class="resposta ok"><span aria-hidden="true">🏁 </span>Livre das dívidas caras em ${mesAno(P.livreEm)}</div>`
     : `<div class="resposta ruim"><span aria-hidden="true">🏁 </span>Com esse gasto, não fica livre em 12 meses</div>`);
-  L.push(`<div class="rotulos">${d.cartoes ? `<span>Cartão vencido <b>${R(d.cartoes)}</b></span>` : ''}${d.faculdade ? `<span>Faculdade <b>${R(d.faculdade)}</b></span>` : ''}${d.cheque ? `<span>Cheque especial <b>${R(d.cheque)}</b></span>` : ''}</div>`);
+  L.push(`<div class="rotulos">${d.cartoes ? `<span>Cartão vencido <b>${R(d.cartoes)}</b></span>` : ''}${d.faculdade ? `<span>Faculdade atrasada <b>${R(d.faculdade)}</b></span>` : ''}${d.cheque ? `<span>Cheque especial <b>${R(d.cheque)}</b></span>` : ''}</div>`);
   L.push(`<label class="pequeno" for="gastoPlano" style="display:block;margin-top:10px">Dia a dia por mês: <b id="gastoTxt" style="color:var(--tx)">${R(valor)}</b>${P.usandoRitmo ? ' <span class="tag mu">seu ritmo</span>' : ''}</label>
     <div class="controle">
       <button class="passo" data-passo="-100" aria-label="Menos 100 reais">−</button>
@@ -504,7 +505,7 @@ function htmlPlano(P, erro) {
   L.push('<div class="marcos" style="margin-top:12px">');
   P.cartoes.forEach(c => L.push(linha(!!c.quitadoEm, c.quitadoEm ? `${nomeCurto(c.nome)} quitado em <b>${mesAno(c.quitadoEm)}</b>` : `${nomeCurto(c.nome)}: não quita em 12 meses`)));
   if (P.faculdade) { const f = P.faculdade, ok = f.quitadoEm && f.quitadoEm <= f.prazo;
-    L.push(linha(ok, ok ? `Faculdade em dia em <b>${mesAno(f.quitadoEm)}</b> (prazo ${mesAno(f.prazo)})` : `Faculdade: no prazo (${mesAno(f.prazo)}) faltariam <b>${R(f.faltaNoPrazo)}</b>`)); }
+    L.push(linha(ok, ok ? `Faculdade em dia em <b>${mesAno(f.quitadoEm)}</b> (prazo ${mesAno(f.prazo)})` : `Faculdade: no prazo (${mesAno(f.prazo)}) faltariam <b>${R(f.faltaNoPrazo)}</b> dos ${R(P.faculdadeAtePrazo)} que vencem até lá`)); }
   L.push(linha(!!P.chequeZeradoEm, P.chequeZeradoEm ? `Cheque especial zerado em <b>${mesAno(P.chequeZeradoEm)}</b>` : 'Cheque especial: não zera em 12 meses'));
   if (P.estouro) L.push(`<div class="aviso"><span aria-hidden="true">🚨 </span>O cheque especial passa do limite em ${mesAno(P.estouro.dia)}.</div>`);
   if (P.jurosCheque + P.jurosCartao > 0) L.push(`<div class="pequeno" style="margin-top:6px">Juros no caminho ≈ ${R(P.jurosCheque + P.jurosCartao)}</div>`);
