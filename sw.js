@@ -1,5 +1,5 @@
 // Guarda a "casca" do painel para abrir sem internet. Os DADOS nunca passam por aqui.
-const VERSAO = 'v3';
+const VERSAO = 'v4';
 const CASCA = ['./', 'index.html', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
