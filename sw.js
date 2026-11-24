@@ -1,6 +1,6 @@
 // Guarda a "casca" do painel para abrir sem internet. Os DADOS nunca passam por aqui.
-const VERSAO = 'v7';
-const CASCA = ['./', 'index.html', 'pagamento.css', 'pagamento.js', 'manifest.webmanifest', 'icons/real-180.png', 'icons/real-192.png', 'icons/real-512.png'];
+const VERSAO = 'v8';
+const CASCA = ['./', 'index.html', 'pagamento.css', 'pagamento.js', 'manifest.webmanifest', 'icons/cunhada-180.png', 'icons/cunhada-192.png', 'icons/cunhada-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSAO).then(c => c.addAll(CASCA)).then(() => self.skipWaiting()));

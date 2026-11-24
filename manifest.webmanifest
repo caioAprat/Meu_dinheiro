@@ -11,13 +11,13 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "icons/real-192.png",
+      "src": "icons/cunhada-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/real-512.png",
+      "src": "icons/cunhada-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
