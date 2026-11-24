@@ -190,6 +190,8 @@
   .tl span:not(:first-child) { text-align: right; } .tl.cab { color: var(--di); border-top: 0; }
   footer { text-align: center; color: var(--di); font-size: 11.5px; margin-top: 18px; line-height: 1.6; }
 </style>
+<link rel="stylesheet" href="pagamento.css">
+<script src="pagamento.js"></script>
 </head>
 <body>
 <header>
@@ -326,16 +328,26 @@ function render() {
       ? `<div class="card"><div class="titulo">Sem conexão</div><p>Não consegui falar com o assistente e ainda não há dados guardados neste aparelho.</p><button class="btnGrande" style="margin-top:12px" data-acao="tentar">Tentar de novo</button></div>`
       : '<div class="skel"></div><div class="skel" style="height:80px"></div><div class="skel" style="height:160px"></div>'; return; }
   const D = S.D, h = [];
+  const pagamentos = (Array.isArray(D.pagamentos) ? D.pagamentos : []).filter(p =>
+    p && /^\d{4}-\d{2}-\d{2}$/.test(p.dia) && Number.isFinite(p.entra) && Number.isFinite(p.sobra));
+  const primeiro = pagamentos[0];
+  document.body.classList.toggle('com-pagamento', !!primeiro);
+  document.querySelector('meta[name="theme-color"]').content = primeiro ? '#f5f2ea' : '#0b0f17';
 
   if (S.offline) h.push(`<div class="toast ruim">Sem conexão: mostrando os dados de ${hhmm(S.quando)}. <button data-acao="tentar">Tentar de novo</button></div>`);
   const problemas = (D.itens || []).filter(i => i.erro || (i.status && !/^(UPDATED|UPDATING)$/.test(i.status)));
   if (problemas.length) h.push(`<div class="toast erro">Problema na conexão com o banco (${esc(problemas.map(i => i.conector || i.status).join(', '))}). Reconecte em meu.pluggy.ai.</div>`);
 
+  if (primeiro) {
+    h.push(telaPagamento(primeiro, pagamentos.slice(1), D.missoesVisuais));
+    const aberto = document.querySelector('.painel-detalhes')?.open;
+    h.push('<details class="painel-detalhes"' + (aberto ? ' open' : '') + '><summary>Ver contas, histórico e ferramentas</summary>');
+  }
   // 1. a pergunta que importa
   const totalFaturas = D.faturas.reduce((s, f) => s + f.valor, 0);
   const ok = D.livre >= 0;
   const diasSal = D.proximoSalario ? diasAte(D.proximoSalario.dia) : null;
-  h.push(`<section class="card hero ${ok ? 'ok' : 'er'}">
+  if (!primeiro) h.push(`<section class="card hero ${ok ? 'ok' : 'er'}">
     <div class="rotulo">${ok ? 'Sobra depois das contas até ' : 'Falta para pagar tudo até '}${dm(D.diaMenor)}</div>
     <div class="valor">${R(Math.abs(D.livre))}</div>
     <div class="sub">${ok ? (D.cheque ? `Mas o cheque especial ainda está em ${R(D.cheque)}` : 'Já descontando todas as contas até lá') : 'Até lá, só o essencial'}${diasSal !== null ? ` · salário ${diasSal <= 0 ? 'hoje' : diasSal === 1 ? 'amanhã' : 'em ' + diasSal + ' dias'}` : ''}</div>
@@ -476,7 +488,9 @@ function render() {
 
   // troca o conteúdo sem perder o campo em que ele está digitando
   const ativo = document.activeElement, idAtivo = ativo && ativo.id, cursor = ativo && ativo.selectionStart;
+  if (primeiro) h.push('</details>');
   app.innerHTML = h.join('');
+  if (primeiro) animarPagamento(primeiro);
   if (idAtivo && $(idAtivo)) { const el = $(idAtivo); el.focus({ preventScroll: true }); try { if (cursor != null) el.setSelectionRange(cursor, cursor); } catch (e) { /* range não tem cursor */ } }
   desenharGrafico();
 }

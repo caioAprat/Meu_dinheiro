@@ -1,0 +1,35 @@
+body.com-pagamento {
+  --bg:#f5f2ea; --card:#fffefa; --card2:#edeae0; --tx:#30362d; --mu:#575b50; --di:#64675b;
+  --linha:#d8d6ca; --pri:#526a3b; --pri2:#e4e8db; --ok:#476137; --ok2:#e7ebdf;
+  --er:#993f35; --er2:#f5e1db; --av:#785722; --av2:#f2e6cd;
+  color-scheme:light; min-height:100dvh; padding-inline:max(20px,env(safe-area-inset-left));
+}
+html:has(.com-pagamento) {background:#f5f2ea}
+.com-pagamento header {margin:8px 0 16px}
+.com-pagamento h1 {font-size:25px;letter-spacing:-1px}
+.com-pagamento #toast .toast {background:#e4e8db;color:#30362d}
+.com-pagamento #toast .ruim {background:#f2e6cd}
+.cascata {margin-top:16px}
+.cascata h2,.futuros h2,.missao-atual h2 {font-size:17px;letter-spacing:-.045em;font-weight:650}
+.cascata h2 {font-weight:450;color:var(--mu);margin-bottom:20px}
+.etapa {position:relative;padding:0 0 16px 22px;border-left:1px solid #a3aa96;margin-left:4px}
+.etapa::before {content:"";position:absolute;left:-4px;top:6px;width:7px;height:7px;border:1px solid #747e69;border-radius:50%;background:var(--bg)}
+.etapa.ativa::before {background:var(--pri);box-shadow:0 0 0 4px var(--pri2)}
+.etapa strong,.missao-atual h2 {display:flex;justify-content:space-between;gap:8px}
+.etapa strong {line-height:1.25;font-size:16px;font-weight:580}
+.etapa small,.missao-atual p,.futuros small {display:block;color:var(--mu);font-size:13px}
+.etapa strong span {white-space:nowrap}
+.trilho {height:8px;background:#e4e2d9;margin-top:7px;border-radius:3px;overflow:hidden}
+.trilho i {display:block;height:100%;background:#a3ab96;transform-origin:left;border-radius:inherit}
+.ativa .trilho i {background:var(--pri)}
+.resultado {text-align:center;padding:15px 0 22px;color:var(--pri);background:radial-gradient(ellipse at center,#e8e9da,transparent 70%)}
+.resultado.negativo {color:var(--er)}
+.resultado b {display:block;font-size:clamp(42px,13vw,73px);font-weight:300;line-height:1.12;letter-spacing:-.065em}
+.resultado small {font-size:14px}
+.faixa-pagamentos {display:flex;overflow-x:auto;scroll-snap-type:x proximity;margin:10px 0 16px}
+.futuros article {flex:0 0 52%;padding:0 12px 3px 0;scroll-snap-align:start;font-size:14px}
+.futuros article + article {padding-left:13px;border-left:1px solid var(--linha)}
+.missao-atual {background:var(--card);padding:14px;border:1px solid var(--linha);border-radius:16px;margin:12px 0}
+.missao-atual progress {display:block;width:100%;height:7px;accent-color:var(--pri);margin:8px 0}
+.painel-detalhes > summary {cursor:pointer;min-height:44px;padding:12px 0;color:var(--pri);font-weight:600}
+
