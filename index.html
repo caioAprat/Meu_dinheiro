@@ -805,7 +805,7 @@
         [0, 7, 14, 21, 28, 35]
           .filter((i) => i < Sr.length)
           .forEach((i) => {
-            svg += `<text x="${Math.min(W - 18, Math.max(2, x(i) - 12))}" y="${H - 6}" fill="var(--apagado)" font-size="13">${i === 0 ? "hoje" : dm(Sr[i].dia)}</text>`;
+            svg += `<text x="${Math.min(W - 2, Math.max(2, x(i)))}" text-anchor="${i === 0 ? "start" : i === 35 || i + 7 >= Sr.length ? "end" : "middle"}" y="${H - 6}" fill="var(--apagado)" font-size="13">${i === 0 ? "hoje" : dm(Sr[i].dia)}</text>`;
           });
         svg += `<line id="cursor" x1="0" x2="0" y1="${PT - 6}" y2="${H - PB}" stroke="var(--tinta)" stroke-opacity=".5" visibility="hidden"/><circle id="cursorPt" r="4" fill="var(--tinta)" visibility="hidden"/>`;
         el.innerHTML = svg;

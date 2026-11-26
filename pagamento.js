@@ -111,7 +111,7 @@ function telaPagamento(p, futuros, missoes) {
       (p.ate
         ? new Date(dt(p.ate).getTime() + 864e5).toISOString().slice(0, 10)
         : null);
-  return `<section class="cascata" aria-labelledby="proximo-titulo"><h2 id="proximo-titulo">Próximo pagamento · ${mesAno(p.dia)} · ${prazo}</h2><div class="degraus"><div class="etapa entrada"><strong>Entra ${R(p.entra)}</strong><small>${fontes.join(" + ")}${conta}</small>${barraMordida(p.entra, p.entra, p.entra)}</div>${etapas}</div><div class="resultado"><span id="saldoRotulo">Sobra</span><button id="repetir-cascata" aria-label="Sobra ${R(p.sobra)}. Repetir animação do pagamento"><span id="saldoNumero" aria-hidden="true">${R(p.sobra)}</span></button><i class="pouso" aria-hidden="true"></i><small class="resultado-prazo">${p.dias ? "para " + Number(p.dias) + " dias" : "após estas contas"}${ate ? " · até " + mesAno(ate) : ""}${p.sobra < 0 ? " · falta cobrir" : ""}</small></div>${futuros.length ? '<a class="proxima-secao" href="#proximos">Próximos pagamentos ' + icone("arrow-right") + "</a>" : ""}</section>
+  return `<section class="cascata" aria-labelledby="proximo-titulo"><h2 id="proximo-titulo">Próximo pagamento · ${mesAno(p.dia)} · ${prazo}</h2><div class="degraus"><div class="etapa entrada"><strong>Entra ${R(p.entra)}</strong><small>${fontes.join(" + ")}${conta}</small>${barraMordida(p.entra, p.entra, p.entra)}</div>${etapas}</div><div class="resultado"><span id="saldoRotulo">Sobra</span><button id="repetir-cascata" aria-label="Sobra ${R(p.sobra)}. Repetir animação do pagamento"><span id="saldoNumero" aria-hidden="true">${estruturaNumero(p)}</span></button><i class="pouso" aria-hidden="true"></i><small class="resultado-prazo">${p.dias ? "para " + Number(p.dias) + " dias" : "após estas contas"}${ate ? " · até " + mesAno(ate) : ""}${p.sobra < 0 ? " · falta cobrir" : ""}</small></div>${futuros.length ? '<a class="proxima-secao" href="#proximos">Próximos pagamentos ' + icone("arrow-right") + "</a>" : ""}</section>
   ${lista ? `<section class="futuros" id="proximos" aria-labelledby="futuros-titulo"><div class="topo-secao"><p>Meu dinheiro</p><button data-acao="atualizar" aria-label="Atualizar dados do banco">${icone("rotate-cw")}</button></div><h2 id="futuros-titulo">Próximos pagamentos</h2><div class="faixa-pagamentos" tabindex="0" role="region" aria-label="Pagamentos futuros; deslize ou use as setas do teclado">${lista}</div><div class="paginacao" aria-label="Páginas dos próximos pagamentos">${Array.from({ length: Math.ceil(futuros.length / 2) }, (_, i) => `<button class="bolinha ${i === 0 ? "selecionada" : ""}" data-pagina="${i}" aria-label="Ver página ${i + 1}" aria-current="${i === 0 ? "true" : "false"}"><i></i></button>`).join("")}</div></section>` : ""}
   ${m ? `<section class="missao-atual" aria-labelledby="missao-titulo"><h2 id="missao-titulo">${esc(m.nome)} <span>${Number(m.pct)}%</span></h2><div class="barra-missao" role="progressbar" aria-label="${esc(m.nome)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Number(m.pct)}"><i style="transform:scaleX(${fracaoSaldo(m.pct, 100)})"></i></div><p>${R(m.pago)} de ${R(m.total)}${m.prazo ? " · fecha em " + mesAno(m.prazo) : ""}</p>${(missoes.fila || []).map((x) => '<p class="depois">depois: ' + esc(x.nome) + " · " + R(x.total) + "</p>").join("")}</section>` : ""}<a class="link-contas" href="#todas-contas">Todas as contas ${icone("chevron-down")}</a>`;
 }
@@ -188,212 +188,225 @@ function icone(nome) {
     "</svg>"
   );
 }
-let ultimaCascata = "",
-  pararCascata = () => {};
+// Uma tabela e uma origem document.timeline para toda a coreografia (ms).
+const TEMPOS_CASCATA = Object.freeze({
+  abertura: 600, conta: 1100, destaque: 150, voo: 450,
+  digito: 500, intervaloDigito: 80, sumirCasa: 300, final: 700,
+});
+function valoresCascata(p) {
+  return [p.entra, ...etapasPagamento(p).filter(c => c.cabe !== false && !c.pago).map(c => c.restaDepois)];
+}
+function casasNumero(valor) {
+  const texto = R(valor), casas = { moeda: "R$\u00a0", sinal: texto.startsWith("−") ? "−" : "" };
+  let posicao = 0;
+  for (const char of [...texto.replace(/^−?R\$\s*/, "")].reverse()) {
+    if (/\d/.test(char)) casas["d" + posicao++] = char;
+    else casas["p" + posicao] = char;
+  }
+  return casas;
+}
+function medirJanelasNumero(numero) {
+  return document.fonts.ready.then(() => {
+    if (!numero.isConnected) return;
+    const estilo = getComputedStyle(numero), prova = document.createElement("span");
+    Object.assign(prova.style, {
+      position: "absolute", visibility: "hidden", whiteSpace: "pre",
+      fontFamily: estilo.fontFamily, fontSize: estilo.fontSize,
+      fontWeight: estilo.fontWeight, fontStyle: estilo.fontStyle,
+      fontVariantNumeric: "tabular-nums", letterSpacing: "0px",
+    });
+    document.body.append(prova);
+    // Nesta fonte 1ch difere algumas frações de px do avanço tabular real.
+    const larguras = [..."0123456789"].map(d => {
+      prova.textContent = d;
+      return prova.getBoundingClientRect().width;
+    });
+    prova.remove();
+    numero.style.setProperty("--largura-digito", Math.max(...larguras) / parseFloat(estilo.fontSize) + "em");
+  });
+}
+// Os mesmos nós existem no primeiro quadro, no repouso e em reduced-motion.
+function estruturaNumero(p) {
+  const valores = valoresCascata(p), estados = valores.map(casasNumero), final = casasNumero(p.sobra);
+  const chaves = [...new Set(estados.flatMap(Object.keys).concat(Object.keys(final)))];
+  const ordem = k => k === "sinal" ? 10000 : k === "moeda" ? 9999 : Number(k.slice(1)) * 2 + (k[0] === "p" ? -1 : 0);
+  chaves.sort((a,b) => ordem(b) - ordem(a));
+  return '<span class="numero-trilho">' + chaves.map(k => {
+    const digito = k[0] === "d", char = final[k] || "", largura = digito ? "var(--largura-digito, 1ch)" : "auto";
+    return `<span class="numero-casa ${digito ? "digito" : "numero-sinal"}" data-casa="${k}" style="width:${char ? largura : "0px"};opacity:${char ? 1 : 0}">${digito ? '<span class="digito-rolo">' + estados.concat(final).map(e => '<span>' + (e[k] || "0") + '</span>').join("") + '</span>' : esc(char || estados.find(e => e[k])?.[k] || "")}</span>`;
+  }).join("") + '</span>';
+}
+let ultimaCascata = "", pararCascata = () => {};
 function animarPagamento(p, repetir = false) {
   pararCascata();
   const numero = $("saldoNumero");
   if (!numero) return;
-  const botao = $("repetir-cascata");
+  const botao = $("repetir-cascata"), raiz = numero.closest(".cascata"),
+    movimento = matchMedia("(prefers-reduced-motion: reduce)"),
+    chave = JSON.stringify([p.dia, p.entra, p.sobra, p.contas]),
+    deveAnimar = (repetir || ultimaCascata !== chave) && !movimento.matches;
+  ultimaCascata = chave;
   botao.onclick = () => animarPagamento(p, true);
-  const chave = JSON.stringify([p.dia, p.entra, p.sobra, p.contas]),
-    movimento = matchMedia("(prefers-reduced-motion: reduce)");
-  if ((!repetir && ultimaCascata === chave) || movimento.matches) {
-    ultimaCascata = chave;
+  const linhas = [...raiz.querySelectorAll('.etapa[data-desconta="true"]')],
+    valores = valoresCascata(p), estados = valores.map(casasNumero),
+    casas = [...numero.querySelectorAll(".numero-casa")],
+    trilhoNumero = numero.firstElementChild,
+    animacoes = new Set(), temporarios = [], t = TEMPOS_CASCATA;
+  let cancelado = false, preparado = false, centroFinal = 0;
+  const scrollInicial = scrollY;
+  // Atualiza só estilos, nunca substitui o número por texto/innerHTML.
+  function mostrar(estado, indice) {
+    casas.forEach(casa => {
+      const k = casa.dataset.casa, char = estado[k];
+      casa.style.width = char ? (k[0] === "d" ? "var(--largura-digito, 1ch)" : "auto") : "0px";
+      casa.style.opacity = char ? "1" : "0";
+      const rolo = casa.firstElementChild;
+      if (rolo) rolo.style.transform = `translateY(-${indice * 1.35}em)`;
+    });
+  }
+  function fim() {
+    if (cancelado) return;
+    cancelado = true;
+    animacoes.forEach(a => a.cancel());
+    temporarios.forEach(e => e.remove());
+    raiz.classList.remove("animando");
+    linhas.forEach(l => l.classList.remove("etapa-ativa"));
+    mostrar(casasNumero(p.sobra), estados.length);
+    numero.style.opacity = preparado ? "1" : "0";
+    trilhoNumero.style.transform = `translateX(-${centroFinal}em)`;
+    numero.dataset.valor = String(p.sobra);
+    numero.dataset.formatado = R(p.sobra);
+    movimento.removeEventListener("change", reduzir);
+    window.removeEventListener("scroll", rolar);
+    window.removeEventListener("resize", fim);
+  }
+  const reduzir = () => { if (movimento.matches) fim(); };
+  const rolar = () => { if (Math.abs(scrollY - scrollInicial) > 40) fim(); };
+  pararCascata = fim;
+  numero.style.opacity = "0";
+  const pronto = medirJanelasNumero(numero).then(() => {
+    preparado = true;
+    if (cancelado || !deveAnimar || !linhas.length) numero.style.opacity = "1";
+  });
+  if (!deveAnimar || !linhas.length) {
+    mostrar(casasNumero(p.sobra), estados.length);
+    numero.dataset.valor = String(p.sobra);
+    numero.dataset.formatado = R(p.sobra);
     return;
   }
-  ultimaCascata = chave;
-  const linhas = [...document.querySelectorAll(".etapa[data-saldo]")].filter(
-    (l) => l.dataset.desconta === "true",
-  );
-  if (!linhas.length) return;
-  const raiz = document.querySelector(".cascata"),
-    pouso = raiz.querySelector(".pouso"),
-    prazo = raiz.querySelector(".resultado-prazo");
-  const animacoes = new Set(),
-    timers = [],
-    temporarios = [];
-  let parou = false,
-    exibido = p.entra;
-  const animar = (el, frames, opcoes) => {
-    const a = el.animate(frames, { fill: "both", ...opcoes });
-    animacoes.add(a);
-    return a;
-  };
-  const depois = (ms, fn) =>
-    timers.push(
-      setTimeout(() => {
-        if (!parou && numero.isConnected) fn();
-      }, ms),
-    );
-  const fim = () => {
-    if (parou) return;
-    parou = true;
-    timers.forEach(clearTimeout);
-    animacoes.forEach((a) => a.cancel());
-    temporarios.forEach((e) => e.remove());
-    raiz.classList.remove("animando");
-    numero.textContent = R(p.sobra);
-    movimento.removeEventListener("change", reduzir);
-  };
-  const reduzir = () => {
-    if (movimento.matches) fim();
-  };
+  mostrar(estados[0], 0);
+  numero.style.opacity = "0";
+  numero.dataset.valor = String(p.entra);
+  numero.dataset.formatado = R(p.entra);
   movimento.addEventListener("change", reduzir);
-  pararCascata = fim;
-  raiz.classList.add("animando");
-  numero.textContent = R(p.entra);
-  animar(
-    raiz.querySelector(".entrada .oliva"),
-    [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
-    { duration: 400, easing: "ease-out" },
-  );
-  animar(
-    numero,
-    [
-      { opacity: 0, transform: "translateY(8px)" },
-      { opacity: 1, transform: "translateY(0)" },
-    ],
-    { duration: 250 },
-  );
-  const encerramento = 400 + linhas.length * 540;
-  animar(
-    prazo,
-    [
-      { opacity: 0, transform: "translateY(8px)" },
-      { opacity: 1, transform: "translateY(0)" },
-    ],
-    { delay: encerramento, duration: 300, easing: "ease-out" },
-  );
-  animar(pouso, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], {
-    delay: encerramento,
-    duration: 300,
-    easing: "ease-out",
-  });
-  linhas.forEach((linha, i) => {
-    const inicio = 400 + i * 540,
-      foco = linha.querySelector(".etapa-texto").cloneNode(true);
-    foco.className += " linha-foco";
-    foco.setAttribute("aria-hidden", "true");
-    linha.append(foco);
-    temporarios.push(foco);
-    animar(
-      foco,
-      [
-        { opacity: 0 },
-        { opacity: 1, offset: 0.12 },
-        { opacity: 1, offset: 0.8 },
-        { opacity: 0 },
-      ],
-      { delay: inicio, duration: 540 },
-    );
-    const antes = fracaoSaldo(Number(linha.dataset.antes), p.entra),
-      saldo = fracaoSaldo(Number(linha.dataset.saldo), p.entra);
-    animar(
-      linha.querySelector(".oliva"),
-      [{ transform: `scaleX(${antes})` }, { transform: `scaleX(${saldo})` }],
-      { delay: inicio, duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" },
-    );
-    depois(inicio, () => {
-      // Uma leitura de geometria no começo; os quadros alteram só transform/opacity.
-      const r = linha.querySelector(".trilho").getBoundingClientRect(),
-        n = numero.getBoundingClientRect(),
-        largura = Math.max(3, r.width * (antes - saldo));
-      const pedaco = document.createElement("i");
+  window.addEventListener("scroll", rolar, { passive: true });
+  window.addEventListener("resize", fim);
+  // A fonte real precisa estar pronta antes de medir as janelas tabulares.
+  pronto.then(() => {
+    if (cancelado || !numero.isConnected) return;
+    const fonte = getComputedStyle(numero), em = parseFloat(fonte.fontSize);
+    // Mede a largura REAL de cada símbolo com o mesmo estilo do número.
+    const medidas = casas.map(casa => {
+      const k = casa.dataset.casa;
+      casa.style.width = k[0] === "d" ? "var(--largura-digito, 1ch)" : "auto";
+      return casa.getBoundingClientRect().width;
+    });
+    const largura = estado => casas.reduce((s,c,i) => s + (estado[c.dataset.casa] ? medidas[i] : 0), 0),
+      maior = Math.max(...estados.map(largura), largura(casasNumero(p.sobra)));
+    centroFinal = (maior - largura(casasNumero(p.sobra))) / 2 / em;
+    numero.style.width = maior / em + "em";
+    numero.style.height = "1.08em";
+    mostrar(estados[0], 0);
+    trilhoNumero.style.transform = `translateX(-${(maior - largura(estados[0])) / 2 / em}em)`;
+    numero.dataset.valor = String(p.entra);
+    numero.dataset.formatado = R(p.entra);
+    raiz.classList.add("animando");
+    // Todas as leituras de geometria precedem a criação dos efeitos.
+    const r = raiz.getBoundingClientRect(), n = numero.getBoundingClientRect(),
+      barras = linhas.map(l => l.querySelector(".trilho").getBoundingClientRect()),
+      ultimoImpacto = t.abertura + (linhas.length - 1) * t.conta + t.destaque + t.voo,
+      fimDigitos = ultimoImpacto + t.digito + Math.max(0, Object.keys(estados.at(-1)).filter(k => k[0] === "d").length - 1) * t.intervaloDigito,
+      total = fimDigitos + t.final, origem = document.timeline.currentTime;
+    raiz.dataset.duracao = String(total);
+    const animar = (el, frames, opcoes) => {
+      const a = el.animate(frames, { fill: "both", ...opcoes });
+      a.startTime = origem;
+      animacoes.add(a);
+      return a;
+    };
+    const marco = (ms, fn) => {
+      // Efeito vazio: um marco no MESMO relógio; sem timers de coreografia.
+      const a = animar(raiz, [], { delay: ms, duration: 1 });
+      a.finished.then(() => { if (!cancelado && numero.isConnected) fn(); }).catch(() => {});
+    };
+    numero.style.opacity = "1";
+    animar(numero, [{ opacity: 0 }, { opacity: 1 }], { duration: t.abertura, easing: "ease-out" });
+    animar(raiz.querySelector(".entrada .oliva"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: t.abertura, easing: "ease-out" });
+    // A entrada usa os mesmos nós do repouso; apenas a opacidade muda na abertura.
+    linhas.forEach((linha, i) => {
+      const inicio = t.abertura + i * t.conta, soltar = inicio + t.destaque, impacto = soltar + t.voo,
+        antes = fracaoSaldo(Number(linha.dataset.antes), p.entra), saldo = fracaoSaldo(Number(linha.dataset.saldo), p.entra), b = barras[i];
+      marco(inicio, () => { linhas.forEach(l => l.classList.toggle("etapa-ativa", l === linha)); });
+      animar(linha.querySelector(".oliva"), [{ transform: `scaleX(${antes})` }, { transform: `scaleX(${saldo})` }], { delay: soltar, duration: t.voo, easing: "cubic-bezier(.2,.8,.2,1)" });
+      const pedaco = document.createElement("i"), w = Math.max(3, b.width * (antes - saldo)),
+        left = b.left - r.left + b.width * saldo, top = b.top - r.top,
+        corredor = r.width + 7, dx = corredor - left - w / 2,
+        dy = n.top - r.top + n.height * .65 - top;
       pedaco.className = "pedaco";
       pedaco.setAttribute("aria-hidden", "true");
-      Object.assign(pedaco.style, {
-        left: r.left + r.width * saldo + "px",
-        top: r.top + "px",
-        width: largura + "px",
-        height: r.height + "px",
-      });
-      document.body.append(pedaco);
-      temporarios.push(pedaco);
-      const dx =
-          n.left + n.width / 2 - (r.left + r.width * saldo + largura / 2),
-        dy = n.top + n.height / 2 - r.top;
-      animar(
-        pedaco,
-        [
-          { transform: "translate(0,0) scale(1)", opacity: 1 },
-          {
-            transform: `translate(${dx * 0.32}px,${dy * 0.35}px) scale(.85) rotate(-6deg)`,
-            opacity: 1,
-            offset: 0.45,
-          },
-          { transform: `translate(${dx}px,${dy}px) scale(.06)`, opacity: 0 },
-        ],
-        { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" },
-      );
-    });
-    depois(inicio + 300, () => {
-      const proximo = Number(linha.dataset.saldo);
-      rolarDigitos(numero, exibido, proximo, animar);
-      exibido = proximo;
+      Object.assign(pedaco.style, { left: left + "px", top: top + "px", width: w + "px", height: b.height + "px" });
+      raiz.append(pedaco); temporarios.push(pedaco);
+      // Vai pelo corredor lateral, longe das linhas seguintes e do rótulo Sobra.
+      animar(pedaco, [
+        { transform: "translate(0,0) scale(1)", opacity: 1 },
+        { transform: `translate(${dx}px,0) scale(.04)`, opacity: 1, offset: .35 },
+        { transform: `translate(${dx}px,${dy}px) scale(.04)`, opacity: 1, offset: .85 },
+        { transform: `translate(${dx - 10}px,${dy}px) scale(.01)`, opacity: 0 },
+      ], { delay: soltar, duration: t.voo, easing: "linear" });
+      rolarDigitos(casas, estados[i], estados[i+1], i+1, medidas, impacto, animar);
       const etiqueta = document.createElement("span");
       etiqueta.className = "abatimento-voador";
       etiqueta.textContent = "− " + R(Number(linha.dataset.valor));
       etiqueta.setAttribute("aria-hidden", "true");
-      raiz.querySelector(".resultado").append(etiqueta);
-      temporarios.push(etiqueta);
-      animar(
-        etiqueta,
-        [
-          { opacity: 0, transform: "translateY(0)" },
-          { opacity: 1, transform: "translateY(-3px)", offset: 0.18 },
-          { opacity: 0, transform: "translateY(-12px)" },
-        ],
-        { duration: 500, easing: "ease-out" },
-      );
-      numero.dataset.valor = String(proximo);
+      // Alinha à quina superior direita. O limite da tela mantém a etiqueta
+      // imediatamente acima da quina quando não há espaço lateral no celular.
+      Object.assign(etiqueta.style, { right: Math.max(0, r.right - n.right - 6) + "px", top: n.top - r.top - 18 + "px" });
+      raiz.append(etiqueta);temporarios.push(etiqueta);
+      animar(etiqueta, [
+        { opacity: 0, transform: "translateY(0)" },
+        { opacity: 1, transform: "translateY(-3px)", offset: .18 },
+        { opacity: 0, transform: "translateY(-12px)" },
+      ], { delay: impacto, duration: t.digito, easing: "ease-out" });
+      marco(impacto, () => { numero.dataset.valor = linha.dataset.saldo; numero.dataset.formatado = R(Number(linha.dataset.saldo)); });
     });
-  });
-  animar(botao, [{ transform: "scale(1.06)" }, { transform: "scale(1)" }], {
-    fill: "forwards",
-    delay: encerramento,
-    duration: 380,
-    easing: "cubic-bezier(.34,1.56,.64,1)",
-  });
-  depois(encerramento + 400, fim);
-}
-function rolarDigitos(el, de, para, animar) {
-  const novo = R(para),
-    velho = R(de).padStart(novo.length, " "),
-    diferenca = velho.length - novo.length;
-  el.innerHTML = [...novo]
-    .map((char, i) => {
-      if (!/\d/.test(char))
-        return '<span class="numero-sinal">' + esc(char) + "</span>";
-      const anterior = /\d/.test(velho[i + diferenca])
-          ? Number(velho[i + diferenca])
-          : 0,
-        alvo = Number(char),
-        passos = (anterior - alvo + 10) % 10 || 10;
-      return (
-        '<span class="digito"><span class="digito-rolo" data-passos="' +
-        passos +
-        '">' +
-        Array.from(
-          { length: passos + 1 },
-          (_, j) => "<span>" + ((anterior - j + 10) % 10) + "</span>",
-        ).join("") +
-        "</span></span>"
-      );
-    })
-    .join("");
-  el.querySelectorAll(".digito-rolo").forEach((rolo, i) => {
-    const passos = Number(rolo.dataset.passos);
-    animar(
-      rolo,
-      [
-        { transform: "translateY(0)" },
-        { transform: `translateY(-${(100 * passos) / (passos + 1)}%)` },
-      ],
-      { duration: 220 + i * 12, easing: "cubic-bezier(.2,.8,.2,1)" },
-    );
+    const prazo = raiz.querySelector(".resultado-prazo"), pouso = raiz.querySelector(".pouso");
+    animar(prazo, [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "translateY(0)" }], { delay: fimDigitos, duration: t.final, easing: "ease-out" });
+    animar(pouso, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { delay: fimDigitos, duration: t.final, easing: "ease-out" });
+    animar(trilhoNumero, [
+      { transform: `translateX(-${(maior - largura(estados[0])) / 2 / em}em)` },
+      { transform: `translateX(-${(maior - largura(estados.at(-1))) / 2 / em}em)` },
+    ], { delay: fimDigitos, duration: t.final, easing: "cubic-bezier(.2,.8,.2,1)" });
+    animar(numero, [{ transform: "scale(1)" }, { transform: "scale(1.025)", offset: .3 }, { transform: "scale(1)" }], { delay: fimDigitos, duration: t.final, easing: "ease-out" });
+    // Mantém a caixa máxima até no estado final: o cancelamento não muda layout.
+    const relogio = animar(raiz, [], { duration: total });
+    relogio.finished.then(fim).catch(() => {});
   });
 }
+function rolarDigitos(casas, de, para, indice, medidas, impacto, animar) {
+  const t = TEMPOS_CASCATA;
+  casas.forEach((casa, i) => {
+    const k = casa.dataset.casa, rolo = casa.firstElementChild;
+    if (rolo) animar(rolo, [
+      { transform: `translateY(-${(indice - 1) * 1.35}em)` },
+      { transform: `translateY(-${indice * 1.35}em)` },
+    ], { delay: impacto + Number(k.slice(1)) * t.intervaloDigito, duration: t.digito, fill: "forwards", easing: "cubic-bezier(.2,.8,.2,1)", composite: "replace" });
+    if (!!de[k] !== !!para[k]) animar(casa, [
+      { width: (de[k] ? medidas[i] : 0) + "px", opacity: de[k] ? 1 : 0 },
+      { width: (para[k] ? medidas[i] : 0) + "px", opacity: para[k] ? 1 : 0 },
+    ], { delay: impacto, duration: t.sumirCasa, fill: "forwards", easing: "ease-out" });
+  });
+}
+
 function ligarPaginas() {
   const faixa = document.querySelector(".faixa-pagamentos");
   if (!faixa) return;

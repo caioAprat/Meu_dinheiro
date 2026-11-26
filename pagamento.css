@@ -171,6 +171,7 @@ header .btn {
   }
 }
 .cascata {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 104px);
@@ -266,16 +267,18 @@ header .btn {
   padding: 8px 0;
   min-height: 100px;
   color: var(--oliva);
+  transition: none;
 }
+#repetir-cascata:active { transform: none; }
 #saldoNumero {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
+  display: inline-block;
+  position: relative;
   max-width: 100%;
   font-size: var(--fs-heroi);
   font-weight: 600;
   line-height: 1.08;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .resultado-prazo {
@@ -304,19 +307,17 @@ header .btn {
 .proxima-secao svg {
   width: 20px;
 }
-.animando .etapa-texto {
+.etapa-texto {
+  transition: color 150ms;
+}
+.animando .etapa:not(.etapa-ativa) .etapa-texto {
   color: var(--apagado);
 }
-.linha-foco {
-  position: absolute;
-  top: 0;
-  left: 20px;
-  right: 0;
-  color: var(--tinta) !important;
-  pointer-events: none;
+.animando .etapa-ativa .etapa-texto {
+  color: var(--tinta);
 }
 .pedaco {
-  position: fixed;
+  position: absolute;
   background: var(--areia);
   border-radius: 5px;
   z-index: 30;
@@ -325,24 +326,31 @@ header .btn {
 }
 .abatimento-voador {
   position: absolute;
-  right: 0;
-  top: 5px;
   font-size: var(--fs-pequeno);
   color: var(--apagado);
+  white-space: nowrap;
+  pointer-events: none;
 }
-.digito {
+.numero-trilho {
+  display: flex;
+  width: max-content;
+  margin-left: auto;
+  align-items: flex-start;
+}
+.numero-casa {
   height: 1.08em;
   overflow: hidden;
   display: inline-block;
-  width: 0.55em;
+  flex: none;
   letter-spacing: 0;
 }
+.digito { width: var(--largura-digito, 1ch); }
 .digito-rolo {
   display: flex;
   flex-direction: column;
 }
 .digito-rolo > span {
-  height: 1.08em;
+  height: 1.35em;
   line-height: 1.08;
   flex: none;
 }
@@ -525,6 +533,9 @@ header .btn {
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 24px;
+}
+.contas-cabecalho:has(.menu-ferramentas[open]) {
+  padding-bottom: 202px;
 }
 .contas-cabecalho h2 {
   font-size: var(--fs-titulo);
