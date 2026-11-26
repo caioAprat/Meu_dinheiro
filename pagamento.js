@@ -5,7 +5,7 @@ function nomeHumano(nome) {
     .replace(/Fatura Nubank\s*\(seguinte\)/i, "Fatura Nubank")
     .replace(/Faculdade parcela 4/i, "Faculdade · parcela de nov")
     .replace(/Faculdade parcela 5/i, "Faculdade · parcela de dez")
-    .replace(/Faculdade parcela ([123])/i, "Faculdade · parcela $1");
+    .replace(/Faculdade parcela ([123])\b/i, (_, n) => "Faculdade · parcela de " + ["ago", "set", "out"][n - 1]);
 }
 function etapasPagamento(p) {
   const etapas = [];
