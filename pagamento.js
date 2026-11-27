@@ -258,6 +258,22 @@ function medirJanelasNumero(numero) {
     const larguras = glifos.map(el => el.getBoundingClientRect().width);
     prova.remove();
     numero.style.setProperty("--largura-digito", Math.max(...larguras) / parseFloat(estilo.fontSize) + "em");
+    // O line-box inclui espaço acima/abaixo da tinta. Limitar também esse espaço
+    // impede o vizinho do rolo de ultrapassar o topo/base visíveis da moeda.
+    const contexto = document.createElement("canvas").getContext("2d");
+    if (contexto) {
+      contexto.font = [estilo.fontStyle, estilo.fontWeight, estilo.fontSize, estilo.fontFamily].join(" ");
+      const metrica = contexto.measureText("R$"), tamanho = parseFloat(estilo.fontSize),
+        altura = parseFloat(estilo.lineHeight),
+        baseline = (altura - metrica.fontBoundingBoxAscent - metrica.fontBoundingBoxDescent) / 2 + metrica.fontBoundingBoxAscent;
+      // Navegadores sem métricas de tinta conservam a janela/overflow básicos,
+      // sem rejeitar a preparação nem esconder o saldo com propriedades NaN.
+      if ([baseline, metrica.actualBoundingBoxAscent, metrica.actualBoundingBoxDescent].every(Number.isFinite)) {
+        numero.style.setProperty("--recorte-topo", Math.max(0, baseline - metrica.actualBoundingBoxAscent) / tamanho + "em");
+        numero.style.setProperty("--recorte-base", Math.max(0, altura - baseline - metrica.actualBoundingBoxDescent) / tamanho + "em");
+        numero.style.setProperty("--borda-mascara", (metrica.actualBoundingBoxAscent + metrica.actualBoundingBoxDescent) * .15 / tamanho + "em");
+      }
+    }
     numero.dataset.fonteMedida = chave;
   });
 }
@@ -302,7 +318,7 @@ function animarPagamento(p, repetir = false) {
       const k = casa.dataset.casa, char = estado[k];
       casa.style.width = char ? (k[0] === "d" ? "var(--largura-digito, 1ch)" : "auto") : "0px";
       casa.style.opacity = char ? "1" : "0";
-      if (casa.firstElementChild) casa.firstElementChild.style.transform = "translateY(-"+indice*1.35+"em)";
+      if (casa.firstElementChild) casa.firstElementChild.style.transform = "translateY(-"+indice*1.08+"em)";
     });
   }
   function fim(preservar = false) {
@@ -481,9 +497,9 @@ function animarPagamento(p, repetir = false) {
       marco(impacto, () => { numero.dataset.valor = linha.dataset.saldo; numero.dataset.formatado = R(Number(linha.dataset.saldo)); });
     });
     const prazo = raiz.querySelector(".resultado-prazo"), pouso = raiz.querySelector(".pouso");
-    definirInicio(prazo, { opacity: "0.001", filter: "blur(4px)", transform: "translateY(6px)" });
+    definirInicio(prazo, { opacity: "0.001", transform: "translateY(6px)" });
     definirInicio(pouso, { transform: "scaleX(0)" });
-    animar(prazo, [{ opacity: 0, transform: "translateY(6px)", filter: "blur(4px)" }, { opacity: 1, transform: "translateY(0)", filter: "blur(0px)" }],
+    animar(prazo, [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }],
       { delay: pousar, duration: suave.duracao, easing: suave.easing });
     animar(pouso, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
       { delay: pousar, duration: t.final, easing: quique.easing });
@@ -496,7 +512,7 @@ function animarPagamento(p, repetir = false) {
     animar(pulso, [
       { filter: "brightness(1) saturate(1) hue-rotate(0deg)" },
       { filter: "brightness(1.8723334562) saturate(2.7153816161) hue-rotate(-8.0086419635deg)" },
-    ], { delay: pousar, duration: suave.duracao, easing: suave.easing });
+    ], { delay: fimDigitos, duration: total - prefixo - fimDigitos, easing: suave.easing });
     animar(pulso, [
       { transform: "scale(1)", easing: quique.easing },
       { transform: "scale(1.035)", offset: .3, easing: quique.easing },
@@ -522,31 +538,43 @@ function animarPagamento(p, repetir = false) {
     marco(0, () => { numero.dataset.valor = String(p.entra); numero.dataset.formatado = R(p.entra); });
     const relogio = animar(raiz, [], { retomando: true, duration: total });
     relogio.finished.then(() => fim()).catch(() => {});
-    // Um quadro de preparação deixa as máscaras/camadas prontas antes do relógio.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    // Aguarda a rasterização das máscaras e a promoção das camadas. Dois rAFs
+    // ainda deixavam o primeiro commit/compositor cair dentro da abertura em CPU4×.
+    let quadrosPreparo = 0;
+    function aquecer() {
       if (cancelado) return;
+      if (++quadrosPreparo < 6) { requestAnimationFrame(aquecer); return; }
       const origem = document.timeline.currentTime;
       raiz.dataset.preparacao = String(performance.now() - preparoInicio);
       for (const a of animacoes) {
         a.play();
         a.startTime = origem;
       }
-    }));
+    }
+    requestAnimationFrame(aquecer);
   });
 }
 function rolarDigitos(casas, de, para, indice, medidas, impacto, animar) {
   const t = TEMPOS_CASCATA;
   casas.forEach((casa, i) => {
     const k = casa.dataset.casa, rolo = casa.firstElementChild;
-    if (rolo) animar(rolo, [
-      { transform: "translateY(-"+(indice-1)*1.35+"em)" },
-      { transform: "translateY(-"+indice*1.35+"em)" },
+    // A casa que sai permanece na mesma linha: milhar e ponto esmaecem juntos.
+    if (rolo && para[k]) animar(rolo, [
+      { transform: "translateY(-"+(indice-1)*1.08+"em)" },
+      { transform: "translateY(-"+indice*1.08+"em)" },
     ], { delay: impacto + Number(k.slice(1)) * t.intervaloDigito, duration: t.digito, easing: MOLAS_CASCATA.digito.easing });
     const antes = transformacaoCasa(casas, medidas, de, i), depois = transformacaoCasa(casas, medidas, para, i);
+    const sai = de[k] && !para[k], fecha = casas.some(c => de[c.dataset.casa] && !para[c.dataset.casa]);
     if (antes !== depois) animar(casa, [
-      { transform: antes, opacity: de[k] ? 1 : 0 },
-      { transform: depois, opacity: para[k] ? 1 : 0 },
-    ], { delay: impacto, duration: t.sumirCasa, easing: MOLAS_CASCATA.suave.easing });
+      { transform: antes },
+      ...(fecha ? [{ transform: antes, offset: .4, easing: MOLAS_CASCATA.suave.easing }] : []),
+      { transform: depois },
+    ], { delay: impacto, duration: t.sumirCasa, ...(fecha ? {} : { easing: MOLAS_CASCATA.suave.easing }) });
+    if (!!de[k] !== !!para[k]) animar(casa, sai ? [
+      { opacity: 1, easing: MOLAS_CASCATA.suave.easing },
+      { opacity: 0, offset: .4 },
+      { opacity: 0 },
+    ] : [{ opacity: 0 }, { opacity: 1 }], { delay: impacto, duration: t.sumirCasa });
   });
 }
 

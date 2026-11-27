@@ -1,5 +1,5 @@
 // Guarda a "casca" do painel para abrir sem internet. Os DADOS nunca passam por aqui.
-const VERSAO = "v11";
+const VERSAO = "v12";
 const CASCA = [
   "./",
   "index.html",

@@ -339,8 +339,8 @@ header .btn {
 .animando .pedaco {
   will-change: transform, opacity;
 }
-.animando .numero-pulso,
-.animando .resultado-prazo { will-change: transform, opacity, filter; }
+.animando .numero-pulso { will-change: transform, opacity, filter; }
+.animando .resultado-prazo { will-change: transform, opacity; }
 .abatimento-voador {
   position: absolute;
   font-size: var(--fs-pequeno);
@@ -362,7 +362,7 @@ header .btn {
 }
 .numero-casa {
   height: 1.08em;
-  overflow: hidden;
+  overflow: clip;
   display: inline-block;
   flex: none;
   letter-spacing: 0;
@@ -376,17 +376,18 @@ header .btn {
   margin-left: 0;
 }
 .digito { width: var(--largura-digito, 1ch); }
-.animando .digito {
-  /* NumberFlow: a janela dissolve o glifo, em vez de o cortar na borda. */
-  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
-  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+.digito {
+  /* A máscara já existe no repouso. O recorte contém a tinta na altura do R$. */
+  clip-path: inset(var(--recorte-topo, 0px) 0 var(--recorte-base, 0px));
+  -webkit-mask-image: linear-gradient(transparent var(--recorte-topo, 0px), #000 calc(var(--recorte-topo, 0px) + var(--borda-mascara, .15em)), #000 calc(100% - var(--recorte-base, 0px) - var(--borda-mascara, .15em)), transparent calc(100% - var(--recorte-base, 0px)));
+  mask-image: linear-gradient(transparent var(--recorte-topo, 0px), #000 calc(var(--recorte-topo, 0px) + var(--borda-mascara, .15em)), #000 calc(100% - var(--recorte-base, 0px) - var(--borda-mascara, .15em)), transparent calc(100% - var(--recorte-base, 0px)));
 }
 .digito-rolo {
   display: flex;
   flex-direction: column;
 }
 .digito-rolo > span {
-  height: 1.35em;
+  height: 1.08em;
   line-height: 1.08;
   flex: none;
 }
