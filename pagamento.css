@@ -535,7 +535,7 @@ header .btn {
   margin-bottom: 24px;
 }
 .contas-cabecalho:has(.menu-ferramentas[open]) {
-  padding-bottom: 202px;
+  padding-bottom: 222px;
 }
 .contas-cabecalho h2 {
   font-size: var(--fs-titulo);
@@ -563,7 +563,7 @@ header .btn {
 .menu-opcoes {
   position: absolute;
   right: 0;
-  top: 44px;
+  top: 64px;
   z-index: 10;
   background: var(--superficie);
   border: 1px solid var(--linha);
