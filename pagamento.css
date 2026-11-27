@@ -280,6 +280,7 @@ header .btn {
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  contain: layout style;
 }
 .resultado-prazo {
   display: block;
@@ -310,11 +311,8 @@ header .btn {
 .etapa-texto {
   transition: color 150ms;
 }
-.animando .etapa:not(.etapa-ativa) .etapa-texto {
+.animando .etapa-texto {
   color: var(--apagado);
-}
-.animando .etapa-ativa .etapa-texto {
-  color: var(--tinta);
 }
 .pedaco {
   position: absolute;
@@ -324,12 +322,37 @@ header .btn {
   pointer-events: none;
   transform-origin: center;
 }
+.pedaco-x, .pedaco-y {
+  position: absolute;
+  pointer-events: none;
+}
+.pedaco-x { z-index: 30; }
+.pedaco-y { inset: 0; }
+.animando .etapa-texto { transition: none; }
+/* O perfil CPU4× mostrou custo no primeiro quadro: promover só durante o uso. */
+.animando .numero-pulso,
+.animando .etapa,
+.animando .digito-rolo,
+.animando .numero-casa,
+.animando .pedaco-x,
+.animando .pedaco-y,
+.animando .pedaco {
+  will-change: transform, opacity;
+}
+.animando .numero-pulso,
+.animando .resultado-prazo { will-change: transform, opacity, filter; }
 .abatimento-voador {
   position: absolute;
   font-size: var(--fs-pequeno);
   color: var(--apagado);
   white-space: nowrap;
   pointer-events: none;
+}
+.numero-pulso {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: right center;
 }
 .numero-trilho {
   display: flex;
@@ -343,8 +366,21 @@ header .btn {
   display: inline-block;
   flex: none;
   letter-spacing: 0;
+  transform-origin: right center;
+  contain: layout paint style;
+}
+.animando .numero-trilho {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-left: 0;
 }
 .digito { width: var(--largura-digito, 1ch); }
+.animando .digito {
+  /* NumberFlow: a janela dissolve o glifo, em vez de o cortar na borda. */
+  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
 .digito-rolo {
   display: flex;
   flex-direction: column;
