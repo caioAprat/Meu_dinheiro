@@ -211,14 +211,14 @@ function mola({ rigidez, amortecimento, massa = 1 }) {
   });
 }
 const MOLAS_CASCATA = Object.freeze({
-  suave: mola({ rigidez: 170, amortecimento: 26 }),
-  quique: mola({ rigidez: 260, amortecimento: 18 }),
-  digito: mola({ rigidez: 210, amortecimento: 22 }),
+  suave: mola({ rigidez: 220, amortecimento: 30 }),
+  quique: mola({ rigidez: 320, amortecimento: 22 }),
+  digito: mola({ rigidez: 280, amortecimento: 26 }),
 });
-// Uma origem document.timeline; a conta seguinte começa a 60% da anterior.
+// Uma origem document.timeline; a conta seguinte começa a 50% da anterior.
 const TEMPOS_CASCATA = Object.freeze({
-  abertura: MOLAS_CASCATA.suave.duracao, primeira: 220, destaque: 120, voo: 800,
-  conta: Math.round(.6 * (120 + 800 + MOLAS_CASCATA.digito.duracao + 105)),
+  abertura: MOLAS_CASCATA.suave.duracao, primeira: 150, destaque: 90, voo: 520,
+  conta: Math.round(.5 * (90 + 520 + MOLAS_CASCATA.digito.duracao + 105)),
   digito: MOLAS_CASCATA.digito.duracao, intervaloDigito: 35,
   sumirCasa: MOLAS_CASCATA.suave.duracao, final: MOLAS_CASCATA.quique.duracao,
   sobreporFinal: 280,
